@@ -27,13 +27,10 @@ class UIManager {
       }`;
       div.onclick = () => window.openCardPreview(card.code);
 
-      const imgSrc = card.imageUrl || '';
-      const imgContent = imgSrc ? `<img src="${imgSrc}" class="w-full h-full object-cover" alt="${card.name}">` : `
-        <div class="w-full h-full flex flex-col items-center justify-center text-slate-600 p-2">
-          <i class="ph ph-image text-4xl mb-2" aria-hidden="true"></i>
-          <span class="text-[10px] text-slate-500">Geen afbeelding</span>
-        </div>
-      `;
+      const imgSrc = card.imageUrl || 'assets/images/placeholder.png';
+      const imgContent = imgSrc === 'assets/images/placeholder.png' && !card.imageUrl ? `
+        <img src="${imgSrc}" class="w-full h-full object-cover" alt="Geen afbeelding">
+      ` : `<img src="${imgSrc}" class="w-full h-full object-cover" alt="${card.name}">`;
 
       div.innerHTML = `
         <div class="absolute top-2 right-2 z-10 flex gap-1">
@@ -253,7 +250,7 @@ class UIManager {
 
     const imageEl = document.getElementById('preview-image');
     const placeholderEl = document.getElementById('preview-image-placeholder');
-    const src = withDefaults.imageUrl || 'assets/images/placeholder-card.svg';
+    const src = withDefaults.imageUrl || 'assets/images/placeholder.png';
     if (imageEl) {
       imageEl.src = src;
       imageEl.classList.remove('hidden');

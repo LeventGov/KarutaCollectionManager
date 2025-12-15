@@ -1,5 +1,5 @@
 // Main application logic
-const PLACEHOLDER_IMAGE = null; // User will provide their own placeholder in assets/images/
+const PLACEHOLDER_IMAGE = 'assets/images/placeholder.png';
 
 class KarutaApp {
   constructor() {
@@ -244,9 +244,10 @@ class KarutaApp {
       const targetQuery = `${card.name} ${card.series || ''}`.trim();
       try {
         const imageUrl = await api.fetchCharacterImage(targetQuery);
-        this.collection = this.collection.map(c => c.code === key ? { ...c, imageUrl: imageUrl || '' } : c);
+        this.collection = this.collection.map(c => c.code === key ? { ...c, imageUrl: imageUrl || PLACEHOLDER_IMAGE } : c);
       } catch (error) {
         console.error('Image autofill failed', error);
+        this.collection = this.collection.map(c => c.code === key ? { ...c, imageUrl: PLACEHOLDER_IMAGE } : c);
       }
     }
     this.saveCollection();
