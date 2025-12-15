@@ -3,55 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karuta Collection Manager</title>
-    
-    <!-- Tailwind CSS -->
+    <title>Collectie - Karuta Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
-    <!-- Custom Styles -->
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-32">
 
-    <!-- HEADER -->
-    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <i class="ph ph-cards text-2xl text-white"></i>
+    <nav class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30" role="navigation" aria-label="Main navigation">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                        <i class="ph ph-cards text-2xl text-white" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Karuta Manager</span>
+                        <p class="text-xs text-slate-400" id="stats-display" aria-live="polite">Laden...</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Karuta Manager</h1>
-                    <p class="text-xs text-slate-400" id="stats-display">Laden...</p>
+                <div class="flex gap-2" role="menubar">
+                    <a href="index.html" class="px-4 py-2 bg-indigo-600 text-white rounded-lg" role="menuitem" aria-current="page">
+                        <i class="ph ph-cards" aria-hidden="true"></i> Collectie
+                    </a>
+                    <a href="assets/pages/import.html" class="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors" role="menuitem">
+                        <i class="ph ph-upload-simple" aria-hidden="true"></i> Importeer
+                    </a>
+                    <a href="assets/pages/settings.html" class="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors" role="menuitem">
+                        <i class="ph ph-gear" aria-hidden="true"></i> Instellingen
+                    </a>
                 </div>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="openModal()" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition-colors">
-                    <i class="ph ph-upload-simple"></i> Importeer CSV
-                </button>
-                <button onclick="exportData()" class="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition-colors">
-                    <i class="ph ph-floppy-disk"></i> Backup
-                </button>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <!-- MAIN CONTENT -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
+    <main class="max-w-7xl mx-auto px-4 py-6" role="main">
         
-        <!-- FILTERS -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 bg-slate-800/50 p-4 rounded-xl border border-slate-700 backdrop-blur-sm">
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 bg-slate-800/50 p-4 rounded-xl border border-slate-700" aria-label="Filter options">
             <div class="relative col-span-1 lg:col-span-2">
-                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" id="search-input" placeholder="Zoek naam, code, serie..." class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true"></i>
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="Zoek naam, code, serie..." 
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+                    aria-label="Zoek in collectie"
+                >
             </div>
             
-            <input type="text" id="tag-input" placeholder="Filter op Tag..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+            <input 
+                type="text" 
+                id="tag-input" 
+                placeholder="Filter op Tag..." 
+                class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+                aria-label="Filter op tag"
+            >
 
-            <select id="edition-select" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+            <select 
+                id="edition-select" 
+                class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+                aria-label="Filter op editie"
+            >
                 <option value="all">Alle Edities</option>
                 <option value="1">Editie 1</option>
                 <option value="2">Editie 2</option>
@@ -62,159 +74,116 @@
             </select>
 
             <div class="flex gap-2">
-                <select id="sort-select" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                <select 
+                    id="sort-select" 
+                    class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+                    aria-label="Sorteer op"
+                >
                     <option value="print">Sorteer: Print #</option>
                     <option value="quality">Sorteer: Kwaliteit</option>
                     <option value="edition">Sorteer: Editie</option>
                     <option value="name">Sorteer: Naam</option>
                 </select>
-                <button onclick="toggleSortDirection()" id="sort-btn" class="px-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300">↑</button>
+                <button 
+                    onclick="toggleSortDirection()" 
+                    id="sort-btn" 
+                    class="px-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300"
+                    aria-label="Wijzig sorteer richting"
+                >↑</button>
             </div>
-        </div>
+        </section>
 
-        <!-- ACTIONS BAR -->
         <div class="flex justify-between items-center mb-4 text-sm text-slate-400">
-            <span id="result-count">0 resultaten</span>
-            <button onclick="toggleSelectAll()" class="text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer">
-                <i class="ph ph-checks"></i> <span id="select-all-text">Selecteer zichtbaar</span>
+            <span id="result-count" aria-live="polite">0 resultaten</span>
+            <button 
+                onclick="toggleSelectAll()" 
+                class="text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
+                aria-label="Selecteer alle zichtbare kaarten"
+            >
+                <i class="ph ph-checks" aria-hidden="true"></i> 
+                <span id="select-all-text">Selecteer zichtbaar</span>
             </button>
         </div>
 
-        <!-- GRID -->
-        <div id="card-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <!-- Cards loaded by JavaScript -->
+        <div id="card-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" role="list" aria-label="Kaarten collectie">
         </div>
     </main>
 
-    <!-- BOTTOM COMMAND BAR -->
-    <div id="command-bar" class="fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-indigo-500 shadow-2xl transition-transform duration-300 z-40 translate-y-full">
+    <div id="command-bar" class="fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-indigo-500 shadow-2xl transition-transform duration-300 z-40 translate-y-full" role="toolbar" aria-label="Discord commando's">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center gap-4">
             <div class="flex items-center gap-3 min-w-fit">
-                <div id="selected-count" class="bg-indigo-600 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">0</div>
+                <div id="selected-count" class="bg-indigo-600 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center" aria-live="polite">0</div>
                 <span class="text-sm text-slate-300 hidden md:inline">Geselecteerd</span>
-                <button onclick="clearSelection()" class="text-xs text-slate-500 hover:text-white underline cursor-pointer">Wis</button>
+                <button 
+                    onclick="clearSelection()" 
+                    class="text-xs text-slate-500 hover:text-white underline cursor-pointer"
+                    aria-label="Wis selectie"
+                >Wis</button>
             </div>
 
             <div class="flex-1 w-full grid grid-cols-1 md:grid-cols-12 gap-2">
-                <select id="cmd-type" class="md:col-span-2 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-500">
-                    <option value="kmt">Multi-Trade (k!mt)</option>
-                    <option value="kgive">Give (k!give)</option>
-                    <option value="kburn">Burn (k!burn)</option>
-                    <option value="ktag">Tag (k!tag)</option>
-                    <option value="kframe">Frame (k!frame)</option>
-                    <option value="kdye">Dye (k!dye)</option>
+                <select 
+                    id="cmd-type" 
+                    class="md:col-span-2 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-500"
+                    aria-label="Commando type"
+                >
+                    <option value="kmt">Multi-Trade</option>
+                    <option value="kgive">Give</option>
+                    <option value="kburn">Burn</option>
+                    <option value="ktag">Tag</option>
+                    <option value="kframe">Frame</option>
+                    <option value="kdye">Dye</option>
                 </select>
 
-                <input type="text" id="cmd-arg" placeholder="@User of Tag naam" class="md:col-span-3 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-500 hidden">
+                <input 
+                    type="text" 
+                    id="cmd-arg" 
+                    placeholder="@User of Tag naam" 
+                    class="md:col-span-3 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-500 hidden"
+                    aria-label="Commando argument"
+                >
 
-                <div id="cmd-preview" class="bg-black/40 rounded px-3 py-2 text-sm font-mono text-slate-300 truncate md:col-span-8 flex items-center">
+                <div id="cmd-preview" class="bg-black/40 rounded px-3 py-2 text-sm font-mono text-slate-300 truncate md:col-span-8 flex items-center" role="status" aria-live="polite">
                     ...
                 </div>
 
                 <div class="md:col-span-2 flex gap-2">
-                    <button onclick="copyCommand()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded px-4 py-2 font-medium text-sm flex items-center justify-center gap-2 transition-colors">
-                        <i class="ph ph-copy"></i> Kopieer
+                    <button 
+                        onclick="copyCommand()" 
+                        class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded px-4 py-2 font-medium text-sm flex items-center justify-center gap-2 transition-colors"
+                        aria-label="Kopieer commando naar klembord"
+                    >
+                        <i class="ph ph-copy" aria-hidden="true"></i> Kopieer
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- IMPORT MODAL -->
-    <div id="import-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full border border-slate-700 flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
-                <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="ph ph-upload-simple text-emerald-400"></i> Importeer</h2>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
-            </div>
-            <div class="p-6 flex-1 overflow-auto">
-                <!-- Import Type Tabs -->
-                <div class="flex gap-2 mb-4">
-                    <button onclick="switchImportTab('paste')" id="tab-paste" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium">
-                        <i class="ph ph-clipboard-text"></i> Plak tekst
-                    </button>
-                    <button onclick="switchImportTab('file')" id="tab-file" class="flex-1 px-4 py-2 bg-slate-700 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-600">
-                        <i class="ph ph-file-arrow-up"></i> Upload bestand
-                    </button>
-                </div>
-
-                <!-- Paste Tab Content -->
-                <div id="import-paste-content">
-                    <div class="bg-blue-900/20 border border-blue-700/50 p-3 rounded mb-4 text-sm text-blue-200">
-                        <p class="font-bold mb-2">Formaten ondersteund:</p>
-                        <ul class="text-xs space-y-1 ml-4">
-                            <li>CSV: <code>code, naam, serie, editie, print, kwaliteit, tag</code></li>
-                            <li>Discord: <code>· code · ★★★☆ · #123 · naam · serie</code></li>
-                        </ul>
-                    </div>
-                    <textarea id="import-text" placeholder="Plak hier je collectie...&#10;&#10;Voorbeelden:&#10;v6n8, Rem, Re:Zero, 4, 124, ★★★☆, waifu&#10;· x9p2 · ★★★★ · #45 · Emilia · Re:Zero" class="w-full h-64 bg-slate-900 border border-slate-600 rounded-lg p-3 font-mono text-xs text-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
-                </div>
-
-                <!-- File Upload Tab Content -->
-                <div id="import-file-content" class="hidden">
-                    <div class="bg-blue-900/20 border border-blue-700/50 p-3 rounded mb-4 text-sm text-blue-200">
-                        <p class="font-bold">Upload CSV of Excel bestand</p>
-                        <p class="text-xs mt-1">Ondersteund: .csv, .txt, .xlsx, .xls</p>
-                    </div>
-                    <div class="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:border-indigo-500 transition-colors">
-                        <input type="file" id="file-input" accept=".csv,.txt,.xlsx,.xls" class="hidden" onchange="handleFileSelect(event)">
-                        <label for="file-input" class="cursor-pointer">
-                            <i class="ph ph-file-arrow-up text-4xl text-slate-400 mb-3 block"></i>
-                            <p class="text-slate-300 font-medium">Klik om bestand te selecteren</p>
-                            <p class="text-xs text-slate-500 mt-2">of sleep bestand hierheen</p>
-                        </label>
-                    </div>
-                    <div id="file-info" class="mt-4 hidden">
-                        <div class="bg-slate-900 rounded-lg p-3 flex items-center gap-3">
-                            <i class="ph ph-file text-2xl text-indigo-400"></i>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-slate-200" id="file-name">-</p>
-                                <p class="text-xs text-slate-500" id="file-size">-</p>
-                            </div>
-                            <button onclick="clearFile()" class="text-slate-400 hover:text-white">
-                                <i class="ph ph-x text-xl"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Import Options -->
-                <div class="mt-4 flex gap-4">
-                    <label class="flex items-center gap-2 cursor-pointer text-sm">
-                        <input type="radio" name="importMode" value="replace" checked class="accent-indigo-500"> Vervang alles
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer text-sm">
-                        <input type="radio" name="importMode" value="merge" class="accent-indigo-500"> Samenvoegen
-                    </label>
-                </div>
-            </div>
-            <div class="p-4 border-t border-slate-700 flex justify-end gap-3">
-                <button onclick="closeModal()" class="px-4 py-2 text-slate-300 hover:text-white">Annuleren</button>
-                <button onclick="processImport()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium shadow-lg">Verwerken</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- IMAGE PICKER MODAL -->
-    <div id="image-picker-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div id="image-picker-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" role="dialog" aria-labelledby="image-picker-title" aria-modal="true">
         <div class="bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-full border border-slate-700 flex flex-col max-h-[90vh]">
             <div class="p-4 border-b border-slate-700 flex justify-between items-center">
-                <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="ph ph-images text-indigo-400"></i> 
+                <h2 id="image-picker-title" class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="ph ph-images text-indigo-400" aria-hidden="true"></i> 
                     Selecteer afbeelding voor <span id="picker-card-name" class="text-indigo-400">-</span>
                 </h2>
-                <button onclick="closeImagePicker()" class="text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+                <button 
+                    onclick="closeImagePicker()" 
+                    class="text-slate-400 hover:text-white"
+                    aria-label="Sluit"
+                >
+                    <i class="ph ph-x text-2xl" aria-hidden="true"></i>
+                </button>
             </div>
             <div class="p-6 flex-1 overflow-auto">
-                <div id="image-picker-loading" class="text-center py-12">
-                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
+                <div id="image-picker-loading" class="text-center py-12" aria-live="polite">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent" role="status" aria-label="Laden"></div>
                     <p class="text-slate-400 mt-4">Afbeeldingen laden...</p>
                 </div>
-                <div id="image-picker-grid" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    <!-- Images will be loaded here -->
+                <div id="image-picker-grid" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" role="list" aria-label="Beschikbare afbeeldingen">
                 </div>
-                <div id="image-picker-error" class="hidden text-center py-12">
-                    <i class="ph ph-warning-circle text-5xl text-amber-500 mb-4"></i>
+                <div id="image-picker-error" class="hidden text-center py-12" role="alert">
+                    <i class="ph ph-warning-circle text-5xl text-amber-500 mb-4" aria-hidden="true"></i>
                     <p class="text-slate-300">Geen resultaten gevonden</p>
                     <p class="text-sm text-slate-500 mt-2">Probeer een andere zoekopdracht</p>
                 </div>
@@ -222,7 +191,6 @@
         </div>
     </div>
 
-    <!-- JavaScript Modules -->
     <script src="assets/js/storage.js"></script>
     <script src="assets/js/api.js"></script>
     <script src="assets/js/utils.js"></script>
