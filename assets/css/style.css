@@ -1,4 +1,3 @@
-/* Custom scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -12,7 +11,6 @@
   border-radius: 4px;
 }
 
-/* Card selection styling */
 .card-selected {
   ring-width: 2px;
   --tw-ring-opacity: 1;
@@ -20,7 +18,6 @@
   border-color: rgb(99 102 241);
 }
 
-/* Fade in animation for cards */
 .fade-in {
   animation: fadeIn 0.3s ease-in-out;
 }
@@ -34,4 +31,25 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+#toast-container {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 60;
+  align-items: center;
+}
+
+.toast {
+  width: min(420px, calc(100vw - 32px));
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 12px 14px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  animation: fadeIn 0.2s ease-out;
 }
