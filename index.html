@@ -195,6 +195,33 @@
         </div>
     </div>
 
+    <!-- IMAGE PICKER MODAL -->
+    <div id="image-picker-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-full border border-slate-700 flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="ph ph-images text-indigo-400"></i> 
+                    Selecteer afbeelding voor <span id="picker-card-name" class="text-indigo-400">-</span>
+                </h2>
+                <button onclick="closeImagePicker()" class="text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+            </div>
+            <div class="p-6 flex-1 overflow-auto">
+                <div id="image-picker-loading" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
+                    <p class="text-slate-400 mt-4">Afbeeldingen laden...</p>
+                </div>
+                <div id="image-picker-grid" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <!-- Images will be loaded here -->
+                </div>
+                <div id="image-picker-error" class="hidden text-center py-12">
+                    <i class="ph ph-warning-circle text-5xl text-amber-500 mb-4"></i>
+                    <p class="text-slate-300">Geen resultaten gevonden</p>
+                    <p class="text-sm text-slate-500 mt-2">Probeer een andere zoekopdracht</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript Modules -->
     <script src="assets/js/storage.js"></script>
     <script src="assets/js/api.js"></script>
