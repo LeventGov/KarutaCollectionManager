@@ -34,11 +34,7 @@ class UIManager {
         imgContent = `
           <div class="w-full h-full flex flex-col items-center justify-center text-slate-600 p-2">
             <span class="text-xs font-bold font-mono">${card.code}</span>
-            <button onclick="event.stopPropagation(); window.openImagePicker('${card.code}', '${card.name.replace(/'/g, "\\'")}')" 
-                    class="mt-2 p-1.5 bg-slate-700 rounded hover:bg-slate-600 text-indigo-400" 
-                    title="Zoek afbeelding">
-              <i class="ph ph-arrows-clockwise"></i>
-            </button>
+            <span class="text-[10px] text-slate-500">Geen afbeelding</span>
           </div>`;
       }
 
