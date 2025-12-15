@@ -105,3 +105,102 @@ function downloadJSON(data, filename = 'export.json') {
   downloadLink.click();
   downloadLink.remove();
 }
+
+/**
+ * Parse Discord collection format
+ * Supports formats like: "· code · ★★★☆ · #print · name · series"
+ * @param {string} text - Text pasted from Discord
+ * @returns {Array} Array of parsed cards
+ */
+function parseDiscordFormat(text) {
+  const lines = text.split('\n');
+  const cards = [];
+
+  lines.forEach(line => {
+    if (!line || !line.trim()) return;
+
+    // Try to detect Discord format with · separators
+    if (line.includes('·')) {
+      const parts = line.split('·').map(p => p.trim()).filter(p => p.length > 0);
+      
+      if (parts.length >= 4) {
+        // Common Discord formats:
+        // Format 1: code · quality · #print · name · series
+        // Format 2: code · name · series · edition · #print · quality
+        
+        let code = '';
+        let name = '';
+        let series = '';
+        let quality = '★☆☆☆';
+        let print = 0;
+        let edition = 1;
+
+        // Find code (usually 4 chars, alphanumeric)
+        const codeMatch = parts.find(p => /^[a-z0-9]{3,6}$/i.test(p));
+        if (codeMatch) code = codeMatch;
+
+        // Find quality (contains stars)
+        const qualityMatch = parts.find(p => p.includes('★'));
+        if (qualityMatch) quality = qualityMatch;
+
+        // Find print number (starts with # or contains digit)
+        const printMatch = parts.find(p => p.startsWith('#') || /^\d+$/.test(p));
+        if (printMatch) print = parseInt(printMatch.replace('#', ''));
+
+        // Remaining parts are likely name and series
+        const remaining = parts.filter(p => 
+          p !== code && p !== quality && p !== printMatch
+        );
+
+        if (remaining.length >= 2) {
+          name = remaining[0];
+          series = remaining[1];
+        } else if (remaining.length === 1) {
+          name = remaining[0];
+        }
+
+        if (code && name) {
+          cards.push({
+            code,
+            name,
+            series: series || 'Unknown',
+            edition,
+            print,
+            quality,
+            tag: '',
+            imageUrl: ''
+          });
+        }
+      }
+    } else {
+      // Fallback to CSV parsing
+      const card = createCardFromParts(parseCSVLine(line));
+      if (card) cards.push(card);
+    }
+  });
+
+  return cards;
+}
+
+/**
+ * Parse file content (CSV or Excel data)
+ * @param {string} content - File content
+ * @param {string} fileType - File type/extension
+ * @returns {Array} Array of parsed cards
+ */
+function parseFileContent(content, fileType = 'csv') {
+  const lines = content.split('\n');
+  const cards = [];
+
+  lines.forEach((line, index) => {
+    // Skip header row if it exists
+    if (index === 0 && (line.toLowerCase().includes('code') || line.toLowerCase().includes('naam'))) {
+      return;
+    }
+
+    const card = createCardFromParts(parseCSVLine(line));
+    if (card) cards.push(card);
+  });
+
+  return cards;
+}
