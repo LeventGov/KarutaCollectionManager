@@ -176,18 +176,60 @@ class KarutaApp {
   processImport() {
     const text = UIManager.getImportText();
     const mode = UIManager.getImportMode();
+    let newCards = [];
 
-    const lines = text.split('\n');
-    const newCards = [];
+    // Try Discord format first, then fallback to CSV
+    if (text.includes('·')) {
+      newCards = parseDiscordFormat(text);
+    } else {
+      const lines = text.split('\n');
+      lines.forEach(line => {
+        const parts = parseCSVLine(line);
+        const card = createCardFromParts(parts);
+        if (card) {
+          newCards.push(card);
+        }
+      });
+    }
 
-    lines.forEach(line => {
-      const parts = parseCSVLine(line);
-      const card = createCardFromParts(parts);
-      if (card) {
-        newCards.push(card);
-      }
-    });
+    this.mergeCards(newCards, mode);
+    this.saveCollection();
+    UIManager.toggleModal(false);
+    UIManager.clearImportText();
+    this.renderGrid();
+    UIManager.alert(`${newCards.length} kaarten verwerkt.`);
+  }
 
+  /**
+   * Process file import
+   * @param {string} content - File content
+   * @param {string} fileName - File name
+   */
+  processFileImport(content, fileName) {
+    const mode = UIManager.getImportMode();
+    const ext = fileName.split('.').pop().toLowerCase();
+    let newCards = [];
+
+    if (ext === 'csv' || ext === 'txt') {
+      newCards = parseFileContent(content, ext);
+    } else {
+      UIManager.alert('Bestandstype niet ondersteund. Gebruik CSV of TXT.');
+      return;
+    }
+
+    this.mergeCards(newCards, mode);
+    this.saveCollection();
+    UIManager.toggleModal(false);
+    this.renderGrid();
+    UIManager.alert(`${newCards.length} kaarten geïmporteerd uit ${fileName}.`);
+  }
+
+  /**
+   * Merge new cards into collection
+   * @param {Array} newCards - New cards to merge
+   * @param {string} mode - 'replace' or 'merge'
+   */
+  mergeCards(newCards, mode) {
     if (mode === 'replace') {
       this.collection = newCards;
     } else {
@@ -202,12 +244,6 @@ class KarutaApp {
       });
       this.collection = Array.from(map.values());
     }
-
-    this.saveCollection();
-    UIManager.toggleModal(false);
-    UIManager.clearImportText();
-    this.renderGrid();
-    UIManager.alert(`${newCards.length} regels verwerkt.`);
   }
 
   /**
@@ -260,6 +296,50 @@ window.closeModal = () => UIManager.toggleModal(false);
 window.processImport = () => app.processImport();
 window.exportData = () => app.exportData();
 window.toggleSortDirection = () => app.toggleSortDirection();
+
+// Import modal functions
+window.switchImportTab = (tab) => {
+  const pasteTab = document.getElementById('tab-paste');
+  const fileTab = document.getElementById('tab-file');
+  const pasteContent = document.getElementById('import-paste-content');
+  const fileContent = document.getElementById('import-file-content');
+
+  if (tab === 'paste') {
+    pasteTab.classList.add('bg-indigo-600', 'text-white');
+    pasteTab.classList.remove('bg-slate-700', 'text-slate-300');
+    fileTab.classList.remove('bg-indigo-600', 'text-white');
+    fileTab.classList.add('bg-slate-700', 'text-slate-300');
+    pasteContent.classList.remove('hidden');
+    fileContent.classList.add('hidden');
+  } else {
+    fileTab.classList.add('bg-indigo-600', 'text-white');
+    fileTab.classList.remove('bg-slate-700', 'text-slate-300');
+    pasteTab.classList.remove('bg-indigo-600', 'text-white');
+    pasteTab.classList.add('bg-slate-700', 'text-slate-300');
+    fileContent.classList.remove('hidden');
+    pasteContent.classList.add('hidden');
+  }
+};
+
+window.handleFileSelect = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  document.getElementById('file-name').innerText = file.name;
+  document.getElementById('file-size').innerText = `${(file.size / 1024).toFixed(1)} KB`;
+  document.getElementById('file-info').classList.remove('hidden');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    app.processFileImport(e.target.result, file.name);
+  };
+  reader.readAsText(file);
+};
+
+window.clearFile = () => {
+  document.getElementById('file-input').value = '';
+  document.getElementById('file-info').classList.add('hidden');
+};
 
 // Initialize app when DOM is ready
 window.addEventListener('DOMContentLoaded', () => app.init());
