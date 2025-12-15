@@ -6,11 +6,7 @@ class KarutaApp {
     this.selectedCards = new Set();
     this.sortDirection = 'asc';
     this.activeCard = null;
-    this.initialData = [
-      applyCardDefaults({ code: 'v6n8', name: 'Rem', series: 'Re:Zero', edition: 4, quality: '★★★☆', print: 124, tag: 'waifu', imageUrl: '' }),
-      applyCardDefaults({ code: 'x9p2', name: 'Emilia', series: 'Re:Zero', edition: 2, quality: '★★★★', print: 45, tag: 'trade', imageUrl: '' }),
-      applyCardDefaults({ code: 'zz99', name: 'Goku', series: 'Dragon Ball', edition: 1, quality: '★☆☆☆', print: 4502, tag: 'burn', imageUrl: '' })
-    ];
+    this.initialData = [];
   }
 
   /**
