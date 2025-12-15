@@ -45,6 +45,34 @@ class APIManager {
       throw error;
     }
   }
+
+  /**
+   * Fetch multiple character images for selection
+   * @param {string} characterName - Name of the character
+   * @param {number} limit - Max results
+   * @returns {Promise<Array>} Array of image options with metadata
+   */
+  async fetchCharacterImages(characterName, limit = 12) {
+    try {
+      const response = await fetch(
+        `${this.jikanBaseUrl}/characters?q=${encodeURIComponent(characterName)}&limit=${limit}`
+      );
+      const json = await response.json();
+      
+      if (json.data && json.data.length > 0) {
+        return json.data.map(char => ({
+          url: char.images.jpg.image_url,
+          name: char.name,
+          nameKanji: char.name_kanji || '',
+          favorites: char.favorites || 0
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching character images:', error);
+      throw error;
+    }
+  }
 }
 
 // Create global instance

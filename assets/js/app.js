@@ -171,6 +171,87 @@ class KarutaApp {
   }
 
   /**
+   * Open image picker modal
+   * @param {string} code - Card code
+   * @param {string} charName - Character name
+   */
+  async openImagePicker(code, charName) {
+    this.currentPickerCard = { code, charName };
+    
+    // Show modal and loading state
+    document.getElementById('image-picker-modal').classList.remove('hidden');
+    document.getElementById('picker-card-name').innerText = charName;
+    document.getElementById('image-picker-loading').classList.remove('hidden');
+    document.getElementById('image-picker-grid').classList.add('hidden');
+    document.getElementById('image-picker-error').classList.add('hidden');
+
+    try {
+      const images = await api.fetchCharacterImages(charName);
+      
+      if (images.length === 0) {
+        document.getElementById('image-picker-loading').classList.add('hidden');
+        document.getElementById('image-picker-error').classList.remove('hidden');
+        return;
+      }
+
+      // Render image grid
+      const grid = document.getElementById('image-picker-grid');
+      grid.innerHTML = '';
+
+      images.forEach((img, index) => {
+        const div = document.createElement('div');
+        div.className = 'group relative bg-slate-900 rounded-lg overflow-hidden border-2 border-slate-700 hover:border-indigo-500 cursor-pointer transition-all';
+        div.onclick = () => this.selectImage(code, img.url);
+
+        div.innerHTML = `
+          <div class="aspect-[3/4] relative">
+            <img src="${img.url}" alt="${img.name}" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+              <i class="ph ph-check-circle text-4xl text-white opacity-0 group-hover:opacity-100 transition-all"></i>
+            </div>
+          </div>
+          <div class="p-2 bg-slate-800">
+            <p class="text-xs text-slate-300 truncate font-medium">${img.name}</p>
+            ${img.favorites > 0 ? `<p class="text-[10px] text-slate-500 mt-0.5"><i class="ph ph-heart-fill text-red-400"></i> ${img.favorites}</p>` : ''}
+          </div>
+        `;
+        grid.appendChild(div);
+      });
+
+      document.getElementById('image-picker-loading').classList.add('hidden');
+      document.getElementById('image-picker-grid').classList.remove('hidden');
+
+    } catch (error) {
+      console.error(error);
+      document.getElementById('image-picker-loading').classList.add('hidden');
+      document.getElementById('image-picker-error').classList.remove('hidden');
+      UIManager.alert('API Fout. Probeer het later opnieuw.');
+    }
+  }
+
+  /**
+   * Select image for card
+   * @param {string} code - Card code
+   * @param {string} imageUrl - Selected image URL
+   */
+  selectImage(code, imageUrl) {
+    this.collection = this.collection.map(c => 
+      c.code === code ? { ...c, imageUrl } : c
+    );
+    this.saveCollection();
+    this.closeImagePicker();
+    this.renderGrid();
+  }
+
+  /**
+   * Close image picker modal
+   */
+  closeImagePicker() {
+    document.getElementById('image-picker-modal').classList.add('hidden');
+    this.currentPickerCard = null;
+  }
+
+  /**
    * Process CSV import
    */
   processImport() {
@@ -291,6 +372,8 @@ window.toggleSelectAll = () => app.toggleSelectAll();
 window.clearSelection = () => app.clearSelection();
 window.copyCommand = () => app.copyCommand();
 window.fetchImage = (code, name) => app.fetchImage(code, name);
+window.openImagePicker = (code, name) => app.openImagePicker(code, name);
+window.closeImagePicker = () => app.closeImagePicker();
 window.openModal = () => UIManager.toggleModal(true);
 window.closeModal = () => UIManager.toggleModal(false);
 window.processImport = () => app.processImport();
