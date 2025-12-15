@@ -25,18 +25,15 @@ class UIManager {
           ? 'card-selected shadow-lg shadow-indigo-500/20' 
           : 'border-slate-700 hover:border-slate-600'
       }`;
-      div.onclick = () => window.openCardDetails(card.code);
+      div.onclick = () => window.openCardPreview(card.code);
 
-      let imgContent = '';
-      if (card.imageUrl) {
-        imgContent = `<img src="${card.imageUrl}" class="w-full h-full object-cover" alt="${card.name}">`;
-      } else {
-        imgContent = `
-          <div class="w-full h-full flex flex-col items-center justify-center text-slate-600 p-2">
-            <span class="text-xs font-bold font-mono">${card.code}</span>
-            <span class="text-[10px] text-slate-500">Geen afbeelding</span>
-          </div>`;
-      }
+      const imgSrc = card.imageUrl || '';
+      const imgContent = imgSrc ? `<img src="${imgSrc}" class="w-full h-full object-cover" alt="${card.name}">` : `
+        <div class="w-full h-full flex flex-col items-center justify-center text-slate-600 p-2">
+          <i class="ph ph-image text-4xl mb-2" aria-hidden="true"></i>
+          <span class="text-[10px] text-slate-500">Geen afbeelding</span>
+        </div>
+      `;
 
       div.innerHTML = `
         <div class="absolute top-2 right-2 z-10 flex gap-1">
@@ -52,14 +49,6 @@ class UIManager {
           >
             <i class="ph ${isSelected ? 'ph-check-square' : 'ph-square'} text-lg"></i>
           </button>
-          <button 
-            onclick="event.stopPropagation(); window.openCardDetails('${card.code}')" 
-            class="bg-slate-900/70 text-slate-200 hover:bg-indigo-600 hover:text-white rounded-md p-1.5 transition-colors border border-slate-700/80"
-            title="Details bewerken"
-            aria-label="Open kaart details"
-          >
-            <i class="ph ph-note-pencil text-lg"></i>
-          </button>
         </div>
         <div class="flex h-full">
           <div class="w-1/3 bg-slate-900 relative min-h-[120px]">
@@ -68,16 +57,29 @@ class UIManager {
           </div>
           <div class="w-2/3 p-3 flex flex-col justify-between">
             <div>
-              <h3 class="font-bold text-slate-100 truncate" title="${card.name}">${card.name}</h3>
+              <h3 class="font-bold text-slate-100 truncate text-sm" title="${card.name}">${card.name}</h3>
               <p class="text-xs text-indigo-300 truncate mb-1" title="${card.series}">${card.series}</p>
               <div class="flex gap-2 mt-2 text-xs">
                 <span class="bg-slate-900 px-2 py-0.5 rounded text-amber-400 border border-slate-700">${card.quality}</span>
                 <span class="bg-slate-900 px-2 py-0.5 rounded text-slate-400 border border-slate-700">#${card.print}</span>
               </div>
             </div>
-            <div class="mt-3 flex justify-between items-end">
-              <span class="text-[10px] font-mono text-slate-500 bg-slate-900/50 px-1.5 rounded">${card.code}</span>
-              ${card.tag ? `<span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-900/50 text-indigo-300 border border-indigo-800/50">${card.tag}</span>` : ''}
+            <div class="mt-3 flex justify-between items-end gap-2">
+              <button 
+                onclick="event.stopPropagation(); copyToClipboard('${card.code}'); window.UIManager?.showToast('Code gekopieerd', 'success')" 
+                class="flex-1 text-[10px] font-mono text-slate-300 bg-slate-900/50 hover:bg-slate-700 hover:text-white px-1.5 py-1 rounded transition-colors border border-slate-700 truncate"
+                title="Kopieer code"
+              >
+                <i class="ph ph-copy text-xs mr-0.5" aria-hidden="true"></i>${card.code}
+              </button>
+              <button 
+                onclick="event.stopPropagation(); window.openCardPreview('${card.code}')" 
+                class="bg-slate-700 hover:bg-indigo-600 text-slate-200 hover:text-white rounded p-1.5 transition-colors"
+                title="Bekijk details"
+                aria-label="Open kaart details"
+              >
+                <i class="ph ph-note-pencil text-lg"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -221,6 +223,51 @@ class UIManager {
   static setDetailValue(id, value) {
     const el = document.getElementById(id);
     if (el) el.value = value ?? '';
+  }
+
+  static showPreviewModal(card) {
+    const modal = document.getElementById('preview-modal');
+    if (!modal) return;
+
+    if (!card) {
+      modal.classList.add('hidden');
+      return;
+    }
+
+    const withDefaults = applyCardDefaults(card);
+    document.getElementById('preview-title').innerText = withDefaults.name || 'Kaart details';
+    document.getElementById('preview-name').innerText = withDefaults.name || 'Kaart details';
+    document.getElementById('preview-code').innerText = withDefaults.code;
+    document.getElementById('preview-series').innerText = withDefaults.series;
+    document.getElementById('preview-edition').innerText = withDefaults.edition;
+    document.getElementById('preview-print').innerText = withDefaults.print;
+    document.getElementById('preview-quality').innerText = withDefaults.quality;
+    document.getElementById('preview-tag').innerText = withDefaults.tag || '—';
+    document.getElementById('preview-alias').innerText = withDefaults.alias || '—';
+    document.getElementById('preview-obtained').innerText = withDefaults.obtainedDate || withDefaults.obtainedTimestamp || '—';
+    document.getElementById('preview-dropper').innerText = withDefaults.dropper || '—';
+    document.getElementById('preview-grabber').innerText = withDefaults.grabber || '—';
+    document.getElementById('preview-guild').innerText = withDefaults.guild || '—';
+    document.getElementById('preview-wishlists').innerText = withDefaults.wishlists || '—';
+    document.getElementById('preview-fights').innerText = withDefaults.fights || '—';
+
+    const imageEl = document.getElementById('preview-image');
+    const placeholderEl = document.getElementById('preview-image-placeholder');
+    const src = withDefaults.imageUrl || 'assets/images/placeholder-card.svg';
+    if (imageEl) {
+      imageEl.src = src;
+      imageEl.classList.remove('hidden');
+    }
+    if (placeholderEl) {
+      placeholderEl.classList.add('hidden');
+    }
+
+    modal.classList.remove('hidden');
+  }
+
+  static hidePreviewModal() {
+    const modal = document.getElementById('preview-modal');
+    if (modal) modal.classList.add('hidden');
   }
 
   static showDetailModal(card) {

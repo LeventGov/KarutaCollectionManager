@@ -1,4 +1,5 @@
 // Main application logic
+const PLACEHOLDER_IMAGE = null; // User will provide their own placeholder in assets/images/
 
 class KarutaApp {
   constructor() {
@@ -35,8 +36,11 @@ class KarutaApp {
    * Save collection to storage
    */
   saveCollection() {
-    storage.save(this.collection);
-    this.updateStats();
+    const saved = storage.save(this.collection);
+    if (saved) {
+      this.updateStats();
+    }
+    return saved;
   }
 
   /**
@@ -44,24 +48,23 @@ class KarutaApp {
    * @returns {Array} Filtered and sorted cards
    */
   getFilteredAndSorted() {
-    const search = document.getElementById('search-input').value.toLowerCase();
+    const nameSearch = document.getElementById('search-name').value.toLowerCase();
+    const seriesSearch = document.getElementById('search-series').value.toLowerCase();
     const tagFilter = document.getElementById('tag-input').value.toLowerCase();
     const edFilter = document.getElementById('edition-select').value;
     const sortOpt = document.getElementById('sort-select').value;
 
     let result = this.collection.filter(card => {
-      const matchesSearch = 
-        card.name.toLowerCase().includes(search) || 
-        card.code.toLowerCase().includes(search) || 
-        card.series.toLowerCase().includes(search);
+      const matchesName = !nameSearch || card.name.toLowerCase().includes(nameSearch) || card.code.toLowerCase().includes(nameSearch);
+      const matchesSeries = !seriesSearch || card.series.toLowerCase().includes(seriesSearch);
       const matchesTag = !tagFilter || (card.tag && card.tag.toLowerCase().includes(tagFilter));
       const matchesEd = edFilter === 'all' || card.edition.toString() === edFilter;
-      return matchesSearch && matchesTag && matchesEd;
+      return matchesName && matchesSeries && matchesTag && matchesEd;
     });
 
     result.sort((a, b) => {
-      let valA = a[sortOpt];
-      let valB = b[sortOpt];
+      let valA = a[sortOpt] ?? '';
+      let valB = b[sortOpt] ?? '';
       if (typeof valA === 'string') valA = valA.toLowerCase();
       if (typeof valB === 'string') valB = valB.toLowerCase();
 
@@ -172,24 +175,27 @@ class KarutaApp {
    * @param {string} code - Card code
    * @param {string} charName - Character name
    */
-  async openImagePicker(code, charName, queryOverride = '') {
-    this.currentPickerCard = { code, charName };
+  async openImagePicker(code, charName, series = '', queryOverride = '') {
+    this.currentPickerCard = { code, charName, series };
     const queryInput = document.getElementById('image-picker-search');
+    const baseQuery = `${charName} ${series || ''}`.trim();
     if (queryInput) {
-      queryInput.value = queryOverride || charName;
+      queryInput.value = queryOverride || baseQuery;
     }
-    await this.searchAndRenderImages(code, queryOverride || charName);
+    await this.searchAndRenderImages(code, charName, series, queryOverride || baseQuery);
   }
 
-  async searchAndRenderImages(code, query) {
+  async searchAndRenderImages(code, name, series = '', query) {
+    const displayName = series ? `${name} — ${series}` : name;
+    const searchQuery = query || `${name} ${series || ''}`.trim();
     document.getElementById('image-picker-modal').classList.remove('hidden');
-    document.getElementById('picker-card-name').innerText = query;
+    document.getElementById('picker-card-name').innerText = displayName;
     document.getElementById('image-picker-loading').classList.remove('hidden');
     document.getElementById('image-picker-grid').classList.add('hidden');
     document.getElementById('image-picker-error').classList.add('hidden');
 
     try {
-      const images = await api.fetchCharacterImages(query);
+      const images = await api.fetchCharacterImages(searchQuery);
       
       if (!images || images.length === 0) {
         document.getElementById('image-picker-loading').classList.add('hidden');
@@ -231,6 +237,22 @@ class KarutaApp {
     }
   }
 
+  async autoFillImages(cards = []) {
+    if (!cards.length) return;
+    for (const card of cards) {
+      const key = card.code;
+      const targetQuery = `${card.name} ${card.series || ''}`.trim();
+      try {
+        const imageUrl = await api.fetchCharacterImage(targetQuery);
+        this.collection = this.collection.map(c => c.code === key ? { ...c, imageUrl: imageUrl || '' } : c);
+      } catch (error) {
+        console.error('Image autofill failed', error);
+      }
+    }
+    this.saveCollection();
+    this.renderGrid();
+  }
+
   /**
    * Select image for card
    * @param {string} code - Card code
@@ -257,10 +279,27 @@ class KarutaApp {
     this.currentPickerCard = null;
   }
 
-  openCardDetails(code) {
+  openCardPreview(code) {
     const card = this.collection.find(c => c.code === code);
     if (!card) return;
     this.activeCard = card;
+    UIManager.showPreviewModal(card);
+    if (!card.imageUrl) {
+      this.autoFillImages([card]).catch(err => console.error('Auto image fetch failed', err));
+    }
+  }
+
+  closeCardPreview() {
+    UIManager.hidePreviewModal();
+    this.activeCard = null;
+  }
+
+  openCardDetails(code) {
+    const targetCode = code || (this.activeCard ? this.activeCard.code : null);
+    const card = this.collection.find(c => c.code === targetCode);
+    if (!card) return;
+    this.activeCard = card;
+    UIManager.hidePreviewModal();
     UIManager.showDetailModal(card);
   }
 
@@ -287,8 +326,10 @@ class KarutaApp {
   openImagePickerFromDetail() {
     if (!this.activeCard) return;
     const nameInput = document.getElementById('detail-name');
+    const seriesInput = document.getElementById('detail-series');
     const charName = nameInput ? nameInput.value || this.activeCard.name : this.activeCard.name;
-    this.openImagePicker(this.activeCard.code, charName);
+    const series = seriesInput ? seriesInput.value || this.activeCard.series : this.activeCard.series;
+    this.openImagePicker(this.activeCard.code, charName, series);
   }
 
   /**
@@ -314,11 +355,16 @@ class KarutaApp {
     }
 
     const result = this.mergeCards(newCards, mode);
-    this.saveCollection();
+    const saved = this.saveCollection();
+    if (!saved) {
+      UIManager.showToast('Opslaan mislukt (localStorage limiet?). Probeer minder kaarten of exporteer eerst.', 'error');
+      return;
+    }
     UIManager.toggleModal(false);
     UIManager.clearImportText();
     this.renderGrid();
     UIManager.showToast(`Import: +${result.stats.added} / ~${result.stats.updated} / ${result.stats.unchanged} gelijk / -${result.stats.removed}`, 'success');
+    this.autoFillImages(result.added.filter(c => !c.imageUrl)).catch(err => console.error('Auto image fetch failed', err));
   }
 
   /**
@@ -344,10 +390,15 @@ class KarutaApp {
     }
 
     const result = this.mergeCards(newCards, mode);
-    this.saveCollection();
+    const saved = this.saveCollection();
+    if (!saved) {
+      UIManager.showToast('Opslaan mislukt (localStorage limiet?). Probeer minder kaarten of exporteer eerst.', 'error');
+      return;
+    }
     UIManager.toggleModal(false);
     this.renderGrid();
     UIManager.showToast(`Import ${fileName}: +${result.stats.added} / ~${result.stats.updated} / ${result.stats.unchanged} gelijk / -${result.stats.removed}`, 'success');
+    this.autoFillImages(result.added.filter(c => !c.imageUrl)).catch(err => console.error('Auto image fetch failed', err));
   }
 
   /**
@@ -393,7 +444,8 @@ class KarutaApp {
    * Setup event listeners
    */
   setupEventListeners() {
-    document.getElementById('search-input').addEventListener('input', () => this.renderGrid());
+    document.getElementById('search-name').addEventListener('input', () => this.renderGrid());
+    document.getElementById('search-series').addEventListener('input', () => this.renderGrid());
     document.getElementById('tag-input').addEventListener('input', () => this.renderGrid());
     document.getElementById('edition-select').addEventListener('change', () => this.renderGrid());
     document.getElementById('sort-select').addEventListener('change', () => this.renderGrid());
@@ -411,17 +463,26 @@ window.toggleSelectAll = () => app.toggleSelectAll();
 window.clearSelection = () => app.clearSelection();
 window.copyCommand = () => app.copyCommand();
 window.fetchImage = (code, name) => app.fetchImage(code, name);
-window.openImagePicker = (code, name) => app.openImagePicker(code, name);
+window.openImagePicker = (code, name, series = '') => app.openImagePicker(code, name, series);
 window.closeImagePicker = () => app.closeImagePicker();
 window.searchImagePicker = () => {
   const queryInput = document.getElementById('image-picker-search');
   const query = queryInput ? queryInput.value : '';
   if (app.currentPickerCard) {
-    app.searchAndRenderImages(app.currentPickerCard.code, query || app.currentPickerCard.charName);
+    const baseQuery = `${app.currentPickerCard.charName} ${app.currentPickerCard.series || ''}`.trim();
+    app.searchAndRenderImages(
+      app.currentPickerCard.code,
+      app.currentPickerCard.charName,
+      app.currentPickerCard.series,
+      query || baseQuery
+    );
   }
 };
+window.openCardPreview = (code) => app.openCardPreview(code);
+window.closeCardPreview = () => app.closeCardPreview();
 window.openCardDetails = (code) => app.openCardDetails(code);
 window.closeCardDetails = () => app.closeCardDetails();
+window.openCardDetailsFromPreview = (code) => app.openCardDetails(code);
 window.saveCardDetails = () => app.saveCardDetails();
 window.openImagePickerFromDetail = () => app.openImagePickerFromDetail();
 window.openModal = () => UIManager.toggleModal(true);
@@ -473,6 +534,9 @@ window.clearFile = () => {
   document.getElementById('file-input').value = '';
   document.getElementById('file-info').classList.add('hidden');
 };
+
+// Global utility exports
+window.copyToClipboard = copyToClipboard;
 
 // Initialize app when DOM is ready
 window.addEventListener('DOMContentLoaded', () => app.init());

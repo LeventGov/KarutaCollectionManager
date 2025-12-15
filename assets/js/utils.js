@@ -96,7 +96,7 @@ function createCardFromRecord(record) {
     edition: parseInt(record.edition) || 1,
     name: record.name || record.character || 'Unknown',
     series: record.series || 'Unknown',
-    quality: record.quality || '★☆☆☆',
+    quality: normalizeQualityStars(record.quality),
     obtainedDate: record.obtainedDate || '',
     obtainedTimestamp: record.obtainedTimestamp || '',
     burnValue: record.burnValue || '',
@@ -162,17 +162,27 @@ function downloadJSON(data, filename = 'export.json') {
 }
 
 function normalizeQualityStars(value) {
-  if (!value) return '★☆☆☆';
-  if (value.includes('★')) return value;
-  const map = {
-    damaged: '★☆☆☆',
-    poor: '★☆☆☆',
-    good: '★★☆☆',
-    excellent: '★★★☆',
-    mint: '★★★★'
-  };
-  const key = value.toLowerCase().trim();
-  return map[key] || '★☆☆☆';
+  if (!value && value !== 0) return '★☆☆☆';
+  if (typeof value === 'string') {
+    if (value.includes('★')) return value;
+    const map = {
+      damaged: '★☆☆☆',
+      poor: '★☆☆☆',
+      good: '★★☆☆',
+      excellent: '★★★☆',
+      mint: '★★★★'
+    };
+    const key = value.toLowerCase().trim();
+    return map[key] || '★☆☆☆';
+  }
+  // Handle numeric quality (0-4)
+  const num = parseInt(value);
+  if (num === 0) return '★☆☆☆';
+  if (num === 1) return '★☆☆☆';
+  if (num === 2) return '★★☆☆';
+  if (num === 3) return '★★★☆';
+  if (num === 4) return '★★★★';
+  return '★☆☆☆';
 }
 
 function parseDiscordFormat(text) {
@@ -183,7 +193,6 @@ function parseDiscordFormat(text) {
   lines.forEach(line => {
     if (!line || !line.trim()) return;
 
-    const firstChar = line.trim().charAt(0);
     const emojiMatch = /^(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u.exec(line.trim());
     const emoji = emojiMatch ? emojiMatch[0] : '';
     const tagged = emoji && emoji !== '◾';
@@ -195,17 +204,20 @@ function parseDiscordFormat(text) {
     const [codeRaw, qualityRaw, printRaw, editionRaw, seriesRaw, ...rest] = parts;
     const nameRaw = rest.join(' ');
 
-    const code = (codeRaw || '').toLowerCase();
+    // Strip any remaining emoji from code and name
+    const cleanCode = (codeRaw || '').replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim().toLowerCase();
+    const cleanName = (nameRaw || '').replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
+    
     const print = parseInt((printRaw || '').replace('#', '').trim()) || 0;
     const edition = parseInt((editionRaw || '').replace('◈', '').trim()) || 1;
     const quality = normalizeQualityStars(qualityRaw);
     const tag = tagged ? emoji : '';
 
-    if (!code || !nameRaw) return;
+    if (!cleanCode || !cleanName) return;
 
     cards.push(applyCardDefaults({
-      code,
-      name: nameRaw,
+      code: cleanCode,
+      name: cleanName,
       series: seriesRaw || 'Unknown',
       edition,
       print,
@@ -246,48 +258,52 @@ function getCardKey(card) {
 
 function smartMergeCollections(existing, newCards) {
   const existingMap = new Map(existing.map(c => [getCardKey(c), applyCardDefaults(c)]));
-  const newMap = new Map(newCards.map(c => [getCardKey(c), applyCardDefaults(c)]));
-  
+  const seenKeys = new Set();
+
   const result = {
     added: [],
     updated: [],
-    unchanged: [],
-    removed: []
+    unchanged: []
   };
 
   newCards.forEach(newCard => {
     const key = getCardKey(newCard);
+    const normalizedNew = applyCardDefaults(newCard);
     if (existingMap.has(key)) {
+      seenKeys.add(key);
       const oldCard = existingMap.get(key);
-      const changed = oldCard.quality !== newCard.quality || 
-                     oldCard.print !== newCard.print ||
-                     oldCard.edition !== newCard.edition ||
-                     oldCard.tag !== newCard.tag;
-      
+      const changed = oldCard.quality !== normalizedNew.quality ||
+                     oldCard.print !== normalizedNew.print ||
+                     oldCard.edition !== normalizedNew.edition ||
+                     oldCard.tag !== normalizedNew.tag;
+
+      const mergedCard = applyCardDefaults({ ...oldCard, ...normalizedNew, imageUrl: oldCard.imageUrl || normalizedNew.imageUrl });
       if (changed) {
-        const mergedCard = applyCardDefaults({ ...oldCard, ...newCard, imageUrl: oldCard.imageUrl || newCard.imageUrl });
         result.updated.push(mergedCard);
       } else {
-        result.unchanged.push(applyCardDefaults(oldCard));
+        result.unchanged.push(mergedCard);
       }
     } else {
-      result.added.push(applyCardDefaults(newCard));
+      result.added.push(normalizedNew);
     }
   });
 
   existingMap.forEach((oldCard, key) => {
-    if (!newMap.has(key)) {
-      result.removed.push(applyCardDefaults(oldCard));
+    if (!seenKeys.has(key)) {
+      result.unchanged.push(applyCardDefaults(oldCard));
     }
   });
 
   return {
-    merged: [...result.added, ...result.updated, ...result.unchanged],
+    merged: [...result.unchanged, ...result.updated, ...result.added],
+    added: result.added,
+    updated: result.updated,
+    unchanged: result.unchanged,
     stats: {
       added: result.added.length,
       updated: result.updated.length,
       unchanged: result.unchanged.length,
-      removed: result.removed.length
+      removed: 0
     }
   };
 }

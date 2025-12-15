@@ -44,17 +44,28 @@
                 <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true"></i>
                 <input 
                     type="text" 
-                    id="search-input" 
-                    placeholder="Zoek naam, code, serie..." 
+                    id="search-name" 
+                    placeholder="Zoek op naam of code" 
                     class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
-                    aria-label="Zoek in collectie"
+                    aria-label="Zoek in collectie op naam"
                 >
             </div>
-            
+
+            <div class="relative">
+                <i class="ph ph-quotes text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true"></i>
+                <input 
+                    type="text" 
+                    id="search-series" 
+                    placeholder="Serie filter" 
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+                    aria-label="Filter op serie"
+                >
+            </div>
+
             <input 
                 type="text" 
                 id="tag-input" 
-                placeholder="Filter op Tag..." 
+                placeholder="Filter op tag" 
                 class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
                 aria-label="Filter op tag"
             >
@@ -83,6 +94,8 @@
                     <option value="quality">Sorteer: Kwaliteit</option>
                     <option value="edition">Sorteer: Editie</option>
                     <option value="name">Sorteer: Naam</option>
+                    <option value="series">Sorteer: Serie</option>
+                    <option value="tag">Sorteer: Tag</option>
                 </select>
                 <button 
                     onclick="toggleSortDirection()" 
@@ -108,6 +121,95 @@
         <div id="card-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" role="list" aria-label="Kaarten collectie">
         </div>
     </main>
+
+    <div id="preview-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" role="dialog" aria-labelledby="preview-title" aria-modal="true">
+        <div class="bg-slate-800 rounded-xl shadow-2xl max-w-5xl w-full border border-slate-700 flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+                <div>
+                    <p class="text-xs text-slate-500" id="preview-code-label">Code</p>
+                    <h2 id="preview-title" class="text-lg font-bold text-white">Kaart</h2>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="openCardDetailsFromPreview(app.activeCard?.code)" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white text-sm">Bewerk</button>
+                    <button onclick="closeCardPreview()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-200 text-sm">Sluiten</button>
+                </div>
+            </div>
+            <div class="p-4 md:p-6 overflow-auto space-y-4">
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2 bg-slate-900/50 border border-slate-700 rounded-lg p-4 space-y-3">
+                        <div class="grid md:grid-cols-2 gap-3 text-sm text-slate-200">
+                            <div>
+                                <p class="text-slate-400">Character</p>
+                                <p class="font-semibold" id="preview-name">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Serie</p>
+                                <p class="font-semibold" id="preview-series">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Editie</p>
+                                <p class="font-semibold" id="preview-edition">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Print</p>
+                                <p class="font-semibold" id="preview-print">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Kwaliteit</p>
+                                <p class="font-semibold" id="preview-quality">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Tag</p>
+                                <p class="font-semibold" id="preview-tag">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Alias</p>
+                                <p class="font-semibold" id="preview-alias">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Code</p>
+                                <p class="font-mono text-xs bg-slate-900 px-2 py-1 rounded" id="preview-code">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Obtained</p>
+                                <p class="font-semibold" id="preview-obtained">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Wishlists</p>
+                                <p class="font-semibold" id="preview-wishlists">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Fights</p>
+                                <p class="font-semibold" id="preview-fights">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Dropper</p>
+                                <p class="font-semibold" id="preview-dropper">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Grabber</p>
+                                <p class="font-semibold" id="preview-grabber">-</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400">Guild</p>
+                                <p class="font-semibold" id="preview-guild">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 space-y-3">
+                        <div class="aspect-[3/4] bg-slate-950 border border-slate-800 rounded-lg overflow-hidden flex items-center justify-center">
+                            <img id="preview-image" alt="Kaart afbeelding" class="w-full h-full object-cover hidden">
+                            <span id="preview-image-placeholder" class="text-slate-600 text-xs">Geen afbeelding</span>
+                        </div>
+                        <button onclick="openCardDetailsFromPreview(app.activeCard?.code)" class="w-full px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white text-sm flex items-center justify-center gap-2">
+                            <i class="ph ph-note-pencil"></i> Bewerk kaart
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="detail-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" role="dialog" aria-labelledby="detail-title" aria-modal="true">
         <div class="bg-slate-800 rounded-xl shadow-2xl max-w-5xl w-full border border-slate-700 flex flex-col max-h-[90vh]">
@@ -303,34 +405,38 @@
 
     <div id="image-picker-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" role="dialog" aria-labelledby="image-picker-title" aria-modal="true">
         <div class="bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-full border border-slate-700 flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+            <div class="p-4 border-b border-slate-700 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 id="image-picker-title" class="text-lg font-bold text-white flex items-center gap-2">
                     <i class="ph ph-images text-indigo-400" aria-hidden="true"></i> 
                     Selecteer afbeelding voor <span id="picker-card-name" class="text-indigo-400">-</span>
                 </h2>
-                <div class="flex items-center gap-2">
-                    <input id="image-picker-search" type="text" placeholder="Zoekterm" class="bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-200" aria-label="Zoekterm afbeelding">
-                    <button onclick="window.searchImagePicker()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 text-sm">Zoek</button>
-                    <button 
-                        onclick="closeImagePicker()" 
-                        class="text-slate-400 hover:text-white"
-                        aria-label="Sluit"
-                    >
-                        <i class="ph ph-x text-2xl" aria-hidden="true"></i>
-                    </button>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                    <input id="image-picker-search" type="text" placeholder="Zoek op naam + serie" class="w-full sm:w-64 bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-200" aria-label="Zoekterm afbeelding">
+                    <div class="flex items-center gap-2 justify-end">
+                        <button onclick="window.searchImagePicker()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 text-sm">Zoek</button>
+                        <button 
+                            onclick="closeImagePicker()" 
+                            class="text-slate-400 hover:text-white"
+                            aria-label="Sluit"
+                        >
+                            <i class="ph ph-x text-2xl" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div class="p-6 flex-1 overflow-auto">
-                <div id="image-picker-loading" class="text-center py-12" aria-live="polite">
-                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent" role="status" aria-label="Laden"></div>
-                    <p class="text-slate-400 mt-4">Afbeeldingen laden...</p>
-                </div>
-                <div id="image-picker-grid" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" role="list" aria-label="Beschikbare afbeeldingen">
-                </div>
-                <div id="image-picker-error" class="hidden text-center py-12" role="alert">
-                    <i class="ph ph-warning-circle text-5xl text-amber-500 mb-4" aria-hidden="true"></i>
-                    <p class="text-slate-300">Geen resultaten gevonden</p>
-                    <p class="text-sm text-slate-500 mt-2">Probeer een andere zoekopdracht</p>
+            <div class="p-6 flex-1 overflow-hidden">
+                <div class="h-full overflow-y-auto space-y-6 pr-1">
+                    <div id="image-picker-loading" class="text-center py-12" aria-live="polite">
+                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent" role="status" aria-label="Laden"></div>
+                        <p class="text-slate-400 mt-4">Afbeeldingen laden...</p>
+                    </div>
+                    <div id="image-picker-grid" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" role="list" aria-label="Beschikbare afbeeldingen">
+                    </div>
+                    <div id="image-picker-error" class="hidden text-center py-12" role="alert">
+                        <i class="ph ph-warning-circle text-5xl text-amber-500 mb-4" aria-hidden="true"></i>
+                        <p class="text-slate-300">Geen resultaten gevonden</p>
+                        <p class="text-sm text-slate-500 mt-2">Probeer een andere zoekopdracht</p>
+                    </div>
                 </div>
             </div>
         </div>

@@ -16,8 +16,10 @@ class StorageManager {
   save(collection) {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(collection));
+      return true;
     } catch (error) {
       console.error('Error saving collection:', error);
+      return false;
     }
   }
 

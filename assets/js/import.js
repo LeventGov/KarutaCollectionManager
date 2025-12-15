@@ -50,8 +50,12 @@ function processImport() {
 
   const collection = storage.load();
   const result = smartMergeCollections(collection, newCards);
-  
-  storage.save(result.merged);
+  const saved = storage.save(result.merged);
+  if (!saved) {
+    UIManager.showToast('Opslaan mislukt (localStorage limiet?). Probeer minder kaarten of exporteer eerst.', 'error');
+    return;
+  }
+
   UIManager.showToast(`Import voltooid: +${result.stats.added} / ~${result.stats.updated} / ${result.stats.unchanged} gelijk / -${result.stats.removed}`, 'success');
   
   setTimeout(() => {
