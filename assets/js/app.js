@@ -1,0 +1,265 @@
+// Main application logic
+
+class KarutaApp {
+  constructor() {
+    this.collection = [];
+    this.selectedCards = new Set();
+    this.sortDirection = 'asc';
+    this.initialData = [
+      { code: 'v6n8', name: 'Rem', series: 'Re:Zero', edition: 4, quality: '★★★☆', print: 124, tag: 'waifu', imageUrl: '' },
+      { code: 'x9p2', name: 'Emilia', series: 'Re:Zero', edition: 2, quality: '★★★★', print: 45, tag: 'trade', imageUrl: '' },
+      { code: 'zz99', name: 'Goku', series: 'Dragon Ball', edition: 1, quality: '★☆☆☆', print: 4502, tag: 'burn', imageUrl: '' }
+    ];
+  }
+
+  /**
+   * Initialize the application
+   */
+  init() {
+    this.loadCollection();
+    this.renderGrid();
+    this.updateStats();
+    this.setupEventListeners();
+  }
+
+  /**
+   * Load collection from storage
+   */
+  loadCollection() {
+    if (storage.exists()) {
+      this.collection = storage.load();
+    } else {
+      this.collection = this.initialData;
+      storage.save(this.collection);
+    }
+  }
+
+  /**
+   * Save collection to storage
+   */
+  saveCollection() {
+    storage.save(this.collection);
+    this.updateStats();
+  }
+
+  /**
+   * Get filtered and sorted cards
+   * @returns {Array} Filtered and sorted cards
+   */
+  getFilteredAndSorted() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const tagFilter = document.getElementById('tag-input').value.toLowerCase();
+    const edFilter = document.getElementById('edition-select').value;
+    const sortOpt = document.getElementById('sort-select').value;
+
+    let result = this.collection.filter(card => {
+      const matchesSearch = 
+        card.name.toLowerCase().includes(search) || 
+        card.code.toLowerCase().includes(search) || 
+        card.series.toLowerCase().includes(search);
+      const matchesTag = !tagFilter || (card.tag && card.tag.toLowerCase().includes(tagFilter));
+      const matchesEd = edFilter === 'all' || card.edition.toString() === edFilter;
+      return matchesSearch && matchesTag && matchesEd;
+    });
+
+    result.sort((a, b) => {
+      let valA = a[sortOpt];
+      let valB = b[sortOpt];
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }
+
+  /**
+   * Render the card grid
+   */
+  renderGrid() {
+    const filteredCards = this.getFilteredAndSorted();
+    UIManager.renderGrid(filteredCards, this.selectedCards);
+  }
+
+  /**
+   * Toggle card selection
+   * @param {string} code - Card code
+   */
+  toggleSelect(code) {
+    if (this.selectedCards.has(code)) {
+      this.selectedCards.delete(code);
+    } else {
+      this.selectedCards.add(code);
+    }
+    this.updateCommandBar();
+    this.renderGrid();
+  }
+
+  /**
+   * Toggle select all visible cards
+   */
+  toggleSelectAll() {
+    const visible = this.getFilteredAndSorted();
+    const allSelected = visible.every(c => this.selectedCards.has(c.code));
+
+    if (allSelected) {
+      visible.forEach(c => this.selectedCards.delete(c.code));
+    } else {
+      visible.forEach(c => this.selectedCards.add(c.code));
+    }
+
+    UIManager.updateSelectAllText(!allSelected);
+    this.updateCommandBar();
+    this.renderGrid();
+  }
+
+  /**
+   * Clear selection
+   */
+  clearSelection() {
+    this.selectedCards.clear();
+    UIManager.updateSelectAllText(false);
+    this.updateCommandBar();
+    this.renderGrid();
+  }
+
+  /**
+   * Update command bar
+   */
+  updateCommandBar() {
+    const cmdType = document.getElementById('cmd-type').value;
+    UIManager.updateCommandBar(this.selectedCards.size, this.selectedCards, cmdType);
+  }
+
+  /**
+   * Copy command to clipboard
+   */
+  async copyCommand() {
+    const text = document.getElementById('cmd-preview').innerText;
+    try {
+      await copyToClipboard(text);
+      UIManager.alert('Gekopieerd!');
+    } catch (error) {
+      UIManager.alert('Fout bij kopiëren.');
+    }
+  }
+
+  /**
+   * Fetch image for card
+   * @param {string} code - Card code
+   * @param {string} charName - Character name
+   */
+  async fetchImage(code, charName) {
+    try {
+      const imageUrl = await api.fetchCharacterImage(charName);
+      if (imageUrl) {
+        this.collection = this.collection.map(c => 
+          c.code === code ? { ...c, imageUrl } : c
+        );
+        this.saveCollection();
+        this.renderGrid();
+      } else {
+        UIManager.alert('Geen foto gevonden :(');
+      }
+    } catch (error) {
+      console.error(error);
+      UIManager.alert('API Fout (teveel verzoeken?). Wacht even.');
+    }
+  }
+
+  /**
+   * Process CSV import
+   */
+  processImport() {
+    const text = UIManager.getImportText();
+    const mode = UIManager.getImportMode();
+
+    const lines = text.split('\n');
+    const newCards = [];
+
+    lines.forEach(line => {
+      const parts = parseCSVLine(line);
+      const card = createCardFromParts(parts);
+      if (card) {
+        newCards.push(card);
+      }
+    });
+
+    if (mode === 'replace') {
+      this.collection = newCards;
+    } else {
+      // Merge mode
+      const map = new Map(this.collection.map(c => [c.code, c]));
+      newCards.forEach(nc => {
+        if (map.has(nc.code)) {
+          // Keep existing image
+          nc.imageUrl = map.get(nc.code).imageUrl;
+        }
+        map.set(nc.code, nc);
+      });
+      this.collection = Array.from(map.values());
+    }
+
+    this.saveCollection();
+    UIManager.toggleModal(false);
+    UIManager.clearImportText();
+    this.renderGrid();
+    UIManager.alert(`${newCards.length} regels verwerkt.`);
+  }
+
+  /**
+   * Export collection as JSON
+   */
+  exportData() {
+    downloadJSON(this.collection, 'karuta_backup.json');
+  }
+
+  /**
+   * Toggle sort direction
+   */
+  toggleSortDirection() {
+    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    UIManager.updateSortButton(this.sortDirection);
+    this.renderGrid();
+  }
+
+  /**
+   * Update statistics display
+   */
+  updateStats() {
+    UIManager.updateStats(this.collection.length);
+  }
+
+  /**
+   * Setup event listeners
+   */
+  setupEventListeners() {
+    document.getElementById('search-input').addEventListener('input', () => this.renderGrid());
+    document.getElementById('tag-input').addEventListener('input', () => this.renderGrid());
+    document.getElementById('edition-select').addEventListener('change', () => this.renderGrid());
+    document.getElementById('sort-select').addEventListener('change', () => this.renderGrid());
+    document.getElementById('cmd-type').addEventListener('change', () => this.updateCommandBar());
+    document.getElementById('cmd-arg').addEventListener('input', () => this.updateCommandBar());
+  }
+}
+
+// Create global app instance
+const app = new KarutaApp();
+
+// Global function bindings for inline event handlers
+window.toggleSelect = (code) => app.toggleSelect(code);
+window.toggleSelectAll = () => app.toggleSelectAll();
+window.clearSelection = () => app.clearSelection();
+window.copyCommand = () => app.copyCommand();
+window.fetchImage = (code, name) => app.fetchImage(code, name);
+window.openModal = () => UIManager.toggleModal(true);
+window.closeModal = () => UIManager.toggleModal(false);
+window.processImport = () => app.processImport();
+window.exportData = () => app.exportData();
+window.toggleSortDirection = () => app.toggleSortDirection();
+
+// Initialize app when DOM is ready
+window.addEventListener('DOMContentLoaded', () => app.init());
