@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karuta Collection Manager</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-32">
+
+    <!-- HEADER -->
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i class="ph ph-cards text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Karuta Manager</h1>
+                    <p class="text-xs text-slate-400" id="stats-display">Laden...</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openModal()" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition-colors">
+                    <i class="ph ph-upload-simple"></i> Importeer CSV
+                </button>
+                <button onclick="exportData()" class="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition-colors">
+                    <i class="ph ph-floppy-disk"></i> Backup
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        
+        <!-- FILTERS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 bg-slate-800/50 p-4 rounded-xl border border-slate-700 backdrop-blur-sm">
+            <div class="relative col-span-1 lg:col-span-2">
+                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="search-input" placeholder="Zoek naam, code, serie..." class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+            </div>
+            
+            <input type="text" id="tag-input" placeholder="Filter op Tag..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+
+            <select id="edition-select" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                <option value="all">Alle Edities</option>
+                <option value="1">Editie 1</option>
+                <option value="2">Editie 2</option>
+                <option value="3">Editie 3</option>
+                <option value="4">Editie 4</option>
+                <option value="5">Editie 5</option>
+                <option value="6">Editie 6</option>
+            </select>
+
+            <div class="flex gap-2">
+                <select id="sort-select" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                    <option value="print">Sorteer: Print #</option>
+                    <option value="quality">Sorteer: Kwaliteit</option>
+                    <option value="edition">Sorteer: Editie</option>
+                    <option value="name">Sorteer: Naam</option>
+                </select>
+                <button onclick="toggleSortDirection()" id="sort-btn" class="px-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300">↑</button>
+            </div>
+        </div>
+
+        <!-- ACTIONS BAR -->
+        <div class="flex justify-between items-center mb-4 text-sm text-slate-400">
+            <span id="result-count">0 resultaten</span>
+            <button onclick="toggleSelectAll()" class="text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer">
+                <i class="ph ph-checks"></i> <span id="select-all-text">Selecteer zichtbaar</span>
+            </button>
+        </div>
+
+        <!-- GRID -->
+        <div id="card-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <!-- Cards loaded by JavaScript -->
+        </div>
+    </main>
+
+    <!-- BOTTOM COMMAND BAR -->
+    <div id="command-bar" class="fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-indigo-500 shadow-2xl transition-transform duration-300 z-40 translate-y-full">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center gap-4">
+            <div class="flex items-center gap-3 min-w-fit">
+                <div id="selected-count" class="bg-indigo-600 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">0</div>
+                <span class="text-sm text-slate-300 hidden md:inline">Geselecteerd</span>
+                <button onclick="clearSelection()" class="text-xs text-slate-500 hover:text-white underline cursor-pointer">Wis</button>
+            </div>
+
+            <div class="flex-1 w-full grid grid-cols-1 md:grid-cols-12 gap-2">
+                <select id="cmd-type" class="md:col-span-2 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-500">
+                    <option value="kmt">Multi-Trade (k!mt)</option>
+                    <option value="kgive">Give (k!give)</option>
+                    <option value="kburn">Burn (k!burn)</option>
+                    <option value="ktag">Tag (k!tag)</option>
+                    <option value="kframe">Frame (k!frame)</option>
+                    <option value="kdye">Dye (k!dye)</option>
+                </select>
+
+                <input type="text" id="cmd-arg" placeholder="@User of Tag naam" class="md:col-span-3 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-500 hidden">
+
+                <div id="cmd-preview" class="bg-black/40 rounded px-3 py-2 text-sm font-mono text-slate-300 truncate md:col-span-8 flex items-center">
+                    ...
+                </div>
+
+                <div class="md:col-span-2 flex gap-2">
+                    <button onclick="copyCommand()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded px-4 py-2 font-medium text-sm flex items-center justify-center gap-2 transition-colors">
+                        <i class="ph ph-copy"></i> Kopieer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IMPORT MODAL -->
+    <div id="import-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full border border-slate-700 flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="ph ph-upload-simple text-emerald-400"></i> Importeer</h2>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+            </div>
+            <div class="p-6 flex-1 overflow-auto">
+                <div class="bg-blue-900/20 border border-blue-700/50 p-3 rounded mb-4 text-sm text-blue-200">
+                    <p class="font-bold">Plak CSV (Code, Naam, Serie, Editie, Print, Kwaliteit, Tag)</p>
+                </div>
+                <textarea id="import-text" placeholder="v6n8, Rem, Re:Zero, 4, 124, ★★★☆, waifu..." class="w-full h-64 bg-slate-900 border border-slate-600 rounded-lg p-3 font-mono text-xs text-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                <div class="mt-4 flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer text-sm">
+                        <input type="radio" name="importMode" value="replace" checked class="accent-indigo-500"> Vervang alles
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer text-sm">
+                        <input type="radio" name="importMode" value="merge" class="accent-indigo-500"> Samenvoegen
+                    </label>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-700 flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 text-slate-300 hover:text-white">Annuleren</button>
+                <button onclick="processImport()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium shadow-lg">Verwerken</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script src="assets/js/storage.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/ui.js"></script>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>
