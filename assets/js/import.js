@@ -28,7 +28,6 @@ function clearAll() {
 
 function processImport() {
   const text = document.getElementById('import-text').value;
-  const mode = document.querySelector('input[name="importMode"]:checked').value;
   let newCards = [];
 
   if (fileContent) {
@@ -54,23 +53,13 @@ function processImport() {
     return;
   }
 
-  let collection = storage.load();
-
-  if (mode === 'replace') {
-    collection = newCards;
-  } else {
-    const map = new Map(collection.map(c => [c.code, c]));
-    newCards.forEach(nc => {
-      if (map.has(nc.code)) {
-        nc.imageUrl = map.get(nc.code).imageUrl;
-      }
-      map.set(nc.code, nc);
-    });
-    collection = Array.from(map.values());
-  }
-
-  storage.save(collection);
-  alert(`${newCards.length} kaarten geïmporteerd!`);
+  const collection = storage.load();
+  const result = smartMergeCollections(collection, newCards);
+  
+  storage.save(result.merged);
+  
+  const msg = `Import voltooid!\n\nToegevoegd: ${result.stats.added}\nBijgewerkt: ${result.stats.updated}\nOnveranderd: ${result.stats.unchanged}`;
+  alert(msg);
   
   setTimeout(() => {
     window.location.href = '../../index.html';
