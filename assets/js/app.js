@@ -355,24 +355,9 @@ class KarutaApp {
       return;
     }
 
-    const result = this.mergeCards(newCards, mode);
-    const saved = this.saveCollection();
-    if (!saved) {
-      UIManager.showToast('Opslaan mislukt (localStorage limiet?). Probeer minder kaarten of exporteer eerst.', 'error');
-      return;
-    }
-    UIManager.toggleModal(false);
-    UIManager.clearImportText();
-    this.renderGrid();
-    UIManager.showToast(`Import: +${result.stats.added} / ~${result.stats.updated} / ${result.stats.unchanged} gelijk / -${result.stats.removed}`, 'success');
-    this.autoFillImages(result.added.filter(c => !c.imageUrl)).catch(err => console.error('Auto image fetch failed', err));
+    this.importCardsInChunks(newCards, mode, 'Import');
   }
 
-  /**
-   * Process file import
-   * @param {string} content - File content
-   * @param {string} fileName - File name
-   */
   processFileImport(content, fileName) {
     const mode = UIManager.getImportMode();
     const ext = fileName.split('.').pop().toLowerCase();
@@ -390,16 +375,87 @@ class KarutaApp {
       return;
     }
 
-    const result = this.mergeCards(newCards, mode);
-    const saved = this.saveCollection();
-    if (!saved) {
-      UIManager.showToast('Opslaan mislukt (localStorage limiet?). Probeer minder kaarten of exporteer eerst.', 'error');
-      return;
+    this.importCardsInChunks(newCards, mode, `Import ${fileName}`);
+  }
+
+  async importCardsInChunks(newCards, mode, label) {
+    const chunkSize = 10;
+    const totalCards = newCards.length;
+    let processedCount = 0;
+    let addedCount = 0;
+    let updatedCount = 0;
+    let unchangedCount = 0;
+
+    UIManager.showImportProgress(true, label, 0, totalCards);
+
+    try {
+      for (let i = 0; i < newCards.length; i += chunkSize) {
+        const chunk = newCards.slice(i, i + chunkSize);
+        const result = this.mergeCards(chunk, mode);
+
+        addedCount += result.stats.added;
+        updatedCount += result.stats.updated;
+        unchangedCount += result.stats.unchanged;
+        processedCount += chunk.length;
+
+        const saved = this.saveCollection();
+        if (!saved) {
+          UIManager.showImportProgress(false);
+          UIManager.showToast('Opslaan mislukt (localStorage limiet?). Probeer minder kaarten of exporteer eerst.', 'error');
+          return;
+        }
+
+        UIManager.updateImportProgress(processedCount, totalCards);
+
+        // Small delay to prevent blocking UI
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+
+      UIManager.showImportProgress(false);
+      UIManager.toggleModal(false);
+      UIManager.clearImportText();
+      this.renderGrid();
+      UIManager.showToast(
+        `${label}: +${addedCount} / ~${updatedCount} / ${unchangedCount} gelijk / -0`,
+        'success'
+      );
+
+      // Auto-fetch images for new cards
+      const allNewCards = newCards.filter(c => !c.imageUrl);
+      if (allNewCards.length > 0) {
+        this.autoFillImagesInChunks(allNewCards);
+      }
+    } catch (error) {
+      UIManager.showImportProgress(false);
+      console.error('Import failed:', error);
+      UIManager.showToast('Import mislukt. Probeer opnieuw.', 'error');
     }
-    UIManager.toggleModal(false);
-    this.renderGrid();
-    UIManager.showToast(`Import ${fileName}: +${result.stats.added} / ~${result.stats.updated} / ${result.stats.unchanged} gelijk / -${result.stats.removed}`, 'success');
-    this.autoFillImages(result.added.filter(c => !c.imageUrl)).catch(err => console.error('Auto image fetch failed', err));
+  }
+
+  async autoFillImagesInChunks(cards) {
+    const chunkSize = 5;
+    for (let i = 0; i < cards.length; i += chunkSize) {
+      const chunk = cards.slice(i, i + chunkSize);
+      await Promise.all(
+        chunk.map(async (card) => {
+          const key = card.code;
+          const targetQuery = `${card.name} ${card.series || ''}`.trim();
+          try {
+            const imageUrl = await api.fetchCharacterImage(targetQuery);
+            if (imageUrl) {
+              this.collection = this.collection.map(c =>
+                c.code === key ? { ...c, imageUrl } : c
+              );
+            }
+          } catch (error) {
+            console.error('Image fetch failed for', key, error);
+          }
+        })
+      );
+      this.saveCollection();
+      this.renderGrid();
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
   }
 
   /**

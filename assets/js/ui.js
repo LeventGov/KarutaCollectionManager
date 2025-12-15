@@ -135,6 +135,8 @@ class UIManager {
    */
   static updateStats(totalCards) {
     document.getElementById('stats-display').innerText = `${totalCards} kaarten in database`;
+    const mobileStat = document.getElementById('stats-display-mobile');
+    if (mobileStat) mobileStat.innerText = `${totalCards} kaarten`;
   }
 
   /**
@@ -381,5 +383,52 @@ class UIManager {
   static isDetailModalOpen() {
     const modal = document.getElementById('detail-modal');
     return modal ? !modal.classList.contains('hidden') : false;
+  }
+
+  static showImportProgress(show = true, label = 'Importeren', current = 0, total = 0) {
+    let progressModal = document.getElementById('import-progress-modal');
+    if (!progressModal && show) {
+      progressModal = document.createElement('div');
+      progressModal.id = 'import-progress-modal';
+      progressModal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50';
+      progressModal.innerHTML = `
+        <div class="bg-slate-800 border border-slate-600 rounded-xl p-8 max-w-sm w-full mx-4 shadow-2xl">
+          <h2 class="text-lg font-bold text-slate-100 mb-4 text-center">${label}</h2>
+          <div class="bg-slate-900 rounded-lg h-3 overflow-hidden border border-slate-700 mb-4">
+            <div id="import-progress-bar" class="h-full bg-gradient-to-r from-indigo-600 to-indigo-500 transition-all duration-300" style="width: 0%"></div>
+          </div>
+          <div id="import-progress-text" class="text-center text-sm text-slate-300 mb-4">
+            <span id="import-current">0</span> / <span id="import-total">${total}</span> kaarten
+          </div>
+          <div class="flex items-center justify-center gap-2 text-slate-400 text-xs">
+            <i class="ph ph-circle-fill text-indigo-500 animate-pulse" aria-hidden="true"></i>
+            Verwerken...
+          </div>
+        </div>
+      `;
+      document.body.appendChild(progressModal);
+    }
+
+    if (!show && progressModal) {
+      progressModal.remove();
+    } else if (show && progressModal) {
+      document.getElementById('import-current').textContent = current;
+      document.getElementById('import-total').textContent = total;
+      const percent = total > 0 ? (current / total) * 100 : 0;
+      document.getElementById('import-progress-bar').style.width = percent + '%';
+    }
+  }
+
+  static updateImportProgress(current, total) {
+    const modal = document.getElementById('import-progress-modal');
+    if (!modal) return;
+    document.getElementById('import-current').textContent = current;
+    const percent = total > 0 ? (current / total) * 100 : 0;
+    document.getElementById('import-progress-bar').style.width = percent + '%';
+  }
+
+  static clearImportError() {
+    const error = document.getElementById('import-error');
+    if (error) error.innerHTML = '';
   }
 }
