@@ -5,10 +5,11 @@ class KarutaApp {
     this.collection = [];
     this.selectedCards = new Set();
     this.sortDirection = 'asc';
+    this.activeCard = null;
     this.initialData = [
-      { code: 'v6n8', name: 'Rem', series: 'Re:Zero', edition: 4, quality: '★★★☆', print: 124, tag: 'waifu', imageUrl: '' },
-      { code: 'x9p2', name: 'Emilia', series: 'Re:Zero', edition: 2, quality: '★★★★', print: 45, tag: 'trade', imageUrl: '' },
-      { code: 'zz99', name: 'Goku', series: 'Dragon Ball', edition: 1, quality: '★☆☆☆', print: 4502, tag: 'burn', imageUrl: '' }
+      applyCardDefaults({ code: 'v6n8', name: 'Rem', series: 'Re:Zero', edition: 4, quality: '★★★☆', print: 124, tag: 'waifu', imageUrl: '' }),
+      applyCardDefaults({ code: 'x9p2', name: 'Emilia', series: 'Re:Zero', edition: 2, quality: '★★★★', print: 45, tag: 'trade', imageUrl: '' }),
+      applyCardDefaults({ code: 'zz99', name: 'Goku', series: 'Dragon Ball', edition: 1, quality: '★☆☆☆', print: 4502, tag: 'burn', imageUrl: '' })
     ];
   }
 
@@ -27,7 +28,7 @@ class KarutaApp {
    */
   loadCollection() {
     if (storage.exists()) {
-      this.collection = storage.load();
+      this.collection = storage.load().map(applyCardDefaults);
     } else {
       this.collection = this.initialData;
       storage.save(this.collection);
@@ -141,9 +142,9 @@ class KarutaApp {
     const text = document.getElementById('cmd-preview').innerText;
     try {
       await copyToClipboard(text);
-      UIManager.alert('Gekopieerd!');
+      UIManager.showToast('Commando gekopieerd', 'success');
     } catch (error) {
-      UIManager.alert('Fout bij kopiëren.');
+      UIManager.showToast('Fout bij kopiëren', 'error');
     }
   }
 
@@ -162,11 +163,11 @@ class KarutaApp {
         this.saveCollection();
         this.renderGrid();
       } else {
-        UIManager.alert('Geen foto gevonden :(');
+        UIManager.showToast('Geen foto gevonden', 'warning');
       }
     } catch (error) {
       console.error(error);
-      UIManager.alert('API Fout (teveel verzoeken?). Wacht even.');
+      UIManager.showToast('API Fout (teveel verzoeken?). Wacht even.', 'error');
     }
   }
 
@@ -175,30 +176,35 @@ class KarutaApp {
    * @param {string} code - Card code
    * @param {string} charName - Character name
    */
-  async openImagePicker(code, charName) {
+  async openImagePicker(code, charName, queryOverride = '') {
     this.currentPickerCard = { code, charName };
-    
-    // Show modal and loading state
+    const queryInput = document.getElementById('image-picker-search');
+    if (queryInput) {
+      queryInput.value = queryOverride || charName;
+    }
+    await this.searchAndRenderImages(code, queryOverride || charName);
+  }
+
+  async searchAndRenderImages(code, query) {
     document.getElementById('image-picker-modal').classList.remove('hidden');
-    document.getElementById('picker-card-name').innerText = charName;
+    document.getElementById('picker-card-name').innerText = query;
     document.getElementById('image-picker-loading').classList.remove('hidden');
     document.getElementById('image-picker-grid').classList.add('hidden');
     document.getElementById('image-picker-error').classList.add('hidden');
 
     try {
-      const images = await api.fetchCharacterImages(charName);
+      const images = await api.fetchCharacterImages(query);
       
-      if (images.length === 0) {
+      if (!images || images.length === 0) {
         document.getElementById('image-picker-loading').classList.add('hidden');
         document.getElementById('image-picker-error').classList.remove('hidden');
         return;
       }
 
-      // Render image grid
       const grid = document.getElementById('image-picker-grid');
       grid.innerHTML = '';
 
-      images.forEach((img, index) => {
+      images.forEach((img) => {
         const div = document.createElement('div');
         div.className = 'group relative bg-slate-900 rounded-lg overflow-hidden border-2 border-slate-700 hover:border-indigo-500 cursor-pointer transition-all';
         div.onclick = () => this.selectImage(code, img.url);
@@ -225,7 +231,7 @@ class KarutaApp {
       console.error(error);
       document.getElementById('image-picker-loading').classList.add('hidden');
       document.getElementById('image-picker-error').classList.remove('hidden');
-      UIManager.alert('API Fout. Probeer het later opnieuw.');
+      UIManager.showToast('API fout. Probeer later opnieuw.', 'error');
     }
   }
 
@@ -239,6 +245,10 @@ class KarutaApp {
       c.code === code ? { ...c, imageUrl } : c
     );
     this.saveCollection();
+    if (UIManager.isDetailModalOpen() && this.activeCard && this.activeCard.code === code) {
+      UIManager.updateDetailImage(imageUrl);
+      this.activeCard = this.collection.find(c => c.code === code) || null;
+    }
     this.closeImagePicker();
     this.renderGrid();
   }
@@ -251,6 +261,40 @@ class KarutaApp {
     this.currentPickerCard = null;
   }
 
+  openCardDetails(code) {
+    const card = this.collection.find(c => c.code === code);
+    if (!card) return;
+    this.activeCard = card;
+    UIManager.showDetailModal(card);
+  }
+
+  closeCardDetails() {
+    this.activeCard = null;
+    UIManager.showDetailModal(null);
+  }
+
+  saveCardDetails() {
+    if (!this.activeCard) return;
+    const updates = UIManager.getDetailFormData();
+
+    this.collection = this.collection.map(card => {
+      if (card.code !== this.activeCard.code) return card;
+      return applyCardDefaults({ ...card, ...updates, print: parseInt(updates.print) || parseInt(updates.number) || 0 });
+    });
+
+    this.activeCard = this.collection.find(c => c.code === this.activeCard.code) || null;
+    this.saveCollection();
+    UIManager.showDetailModal(null);
+    this.renderGrid();
+  }
+
+  openImagePickerFromDetail() {
+    if (!this.activeCard) return;
+    const nameInput = document.getElementById('detail-name');
+    const charName = nameInput ? nameInput.value || this.activeCard.name : this.activeCard.name;
+    this.openImagePicker(this.activeCard.code, charName);
+  }
+
   /**
    * Process CSV import
    */
@@ -259,26 +303,26 @@ class KarutaApp {
     const mode = UIManager.getImportMode();
     let newCards = [];
 
-    // Try Discord format first, then fallback to CSV
-    if (text.includes('·')) {
-      newCards = parseDiscordFormat(text);
-    } else {
-      const lines = text.split('\n');
-      lines.forEach(line => {
-        const parts = parseCSVLine(line);
-        const card = createCardFromParts(parts);
-        if (card) {
-          newCards.push(card);
-        }
-      });
+    if (text.trim()) {
+      if (text.includes('·') || text.includes('.')) {
+        newCards = parseDiscordFormat(text);
+      }
+      if (newCards.length === 0) {
+        newCards = parseFileContent(text, 'csv');
+      }
     }
 
-    this.mergeCards(newCards, mode);
+    if (newCards.length === 0) {
+      UIManager.showToast('Geen geldige kaarten gevonden', 'warning');
+      return;
+    }
+
+    const result = this.mergeCards(newCards, mode);
     this.saveCollection();
     UIManager.toggleModal(false);
     UIManager.clearImportText();
     this.renderGrid();
-    UIManager.alert(`${newCards.length} kaarten verwerkt.`);
+    UIManager.showToast(`Import: +${result.stats.added} / ~${result.stats.updated} / ${result.stats.unchanged} gelijk / -${result.stats.removed}`, 'success');
   }
 
   /**
@@ -294,15 +338,20 @@ class KarutaApp {
     if (ext === 'csv' || ext === 'txt') {
       newCards = parseFileContent(content, ext);
     } else {
-      UIManager.alert('Bestandstype niet ondersteund. Gebruik CSV of TXT.');
+      UIManager.showToast('Bestandstype niet ondersteund. Gebruik CSV of TXT.', 'warning');
       return;
     }
 
-    this.mergeCards(newCards, mode);
+    if (newCards.length === 0) {
+      UIManager.showToast('Geen geldige kaarten gevonden in bestand.', 'warning');
+      return;
+    }
+
+    const result = this.mergeCards(newCards, mode);
     this.saveCollection();
     UIManager.toggleModal(false);
     this.renderGrid();
-    UIManager.alert(`${newCards.length} kaarten geïmporteerd uit ${fileName}.`);
+    UIManager.showToast(`Import ${fileName}: +${result.stats.added} / ~${result.stats.updated} / ${result.stats.unchanged} gelijk / -${result.stats.removed}`, 'success');
   }
 
   /**
@@ -313,18 +362,12 @@ class KarutaApp {
   mergeCards(newCards, mode) {
     if (mode === 'replace') {
       this.collection = newCards;
-    } else {
-      // Merge mode
-      const map = new Map(this.collection.map(c => [c.code, c]));
-      newCards.forEach(nc => {
-        if (map.has(nc.code)) {
-          // Keep existing image
-          nc.imageUrl = map.get(nc.code).imageUrl;
-        }
-        map.set(nc.code, nc);
-      });
-      this.collection = Array.from(map.values());
+      return { stats: { added: newCards.length, updated: 0, unchanged: 0, removed: 0 } };
     }
+
+    const mergeResult = smartMergeCollections(this.collection, newCards);
+    this.collection = mergeResult.merged;
+    return mergeResult;
   }
 
   /**
@@ -374,6 +417,17 @@ window.copyCommand = () => app.copyCommand();
 window.fetchImage = (code, name) => app.fetchImage(code, name);
 window.openImagePicker = (code, name) => app.openImagePicker(code, name);
 window.closeImagePicker = () => app.closeImagePicker();
+window.searchImagePicker = () => {
+  const queryInput = document.getElementById('image-picker-search');
+  const query = queryInput ? queryInput.value : '';
+  if (app.currentPickerCard) {
+    app.searchAndRenderImages(app.currentPickerCard.code, query || app.currentPickerCard.charName);
+  }
+};
+window.openCardDetails = (code) => app.openCardDetails(code);
+window.closeCardDetails = () => app.closeCardDetails();
+window.saveCardDetails = () => app.saveCardDetails();
+window.openImagePickerFromDetail = () => app.openImagePickerFromDetail();
 window.openModal = () => UIManager.toggleModal(true);
 window.closeModal = () => UIManager.toggleModal(false);
 window.processImport = () => app.processImport();

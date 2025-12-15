@@ -33,23 +33,18 @@ function processImport() {
   if (fileContent) {
     newCards = parseFileContent(fileContent, 'csv');
   } else if (text.trim()) {
-    if (text.includes('·')) {
+    if (text.includes('·') || text.includes('.')) {
       newCards = parseDiscordFormat(text);
     } else {
-      const lines = text.split('\n');
-      lines.forEach(line => {
-        const parts = parseCSVLine(line);
-        const card = createCardFromParts(parts);
-        if (card) newCards.push(card);
-      });
+      newCards = parseFileContent(text, 'csv');
     }
   } else {
-    alert('Voer tekst in of selecteer een bestand.');
+    UIManager.showToast('Voer tekst in of selecteer een bestand.', 'warning');
     return;
   }
 
   if (newCards.length === 0) {
-    alert('Geen geldige kaarten gevonden.');
+    UIManager.showToast('Geen geldige kaarten gevonden.', 'warning');
     return;
   }
 
@@ -57,9 +52,7 @@ function processImport() {
   const result = smartMergeCollections(collection, newCards);
   
   storage.save(result.merged);
-  
-  const msg = `Import voltooid!\n\nToegevoegd: ${result.stats.added}\nBijgewerkt: ${result.stats.updated}\nOnveranderd: ${result.stats.unchanged}`;
-  alert(msg);
+  UIManager.showToast(`Import voltooid: +${result.stats.added} / ~${result.stats.updated} / ${result.stats.unchanged} gelijk / -${result.stats.removed}`, 'success');
   
   setTimeout(() => {
     window.location.href = '../../index.html';

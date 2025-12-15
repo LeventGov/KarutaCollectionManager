@@ -55,20 +55,27 @@
                         <i class="ph ph-cards text-2xl text-slate-500" aria-hidden="true"></i>
                     </div>
 
-                    <div class="flex gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <button 
-                            onclick="exportData()" 
-                            class="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors"
-                            aria-label="Exporteer collectie als backup"
+                            onclick="exportJson()" 
+                            class="px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors"
+                            aria-label="Exporteer collectie als JSON"
                         >
-                            <i class="ph ph-download-simple" aria-hidden="true"></i> Exporteer Backup
+                            <i class="ph ph-brackets-curly" aria-hidden="true"></i> Export JSON
+                        </button>
+                        <button 
+                            onclick="exportCsv()" 
+                            class="px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
+                            aria-label="Exporteer collectie als CSV"
+                        >
+                            <i class="ph ph-table" aria-hidden="true"></i> Export CSV
                         </button>
                         <button 
                             onclick="clearAllData()" 
-                            class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg font-medium transition-colors"
+                            class="px-4 py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg font-medium transition-colors"
                             aria-label="Verwijder alle data"
                         >
-                            <i class="ph ph-trash" aria-hidden="true"></i> Wis Alle Data
+                            <i class="ph ph-trash" aria-hidden="true"></i> Wis Alles
                         </button>
                     </div>
                 </div>
@@ -80,9 +87,9 @@
                     Over
                 </h2>
                 <div class="space-y-2 text-sm text-slate-300">
-                    <p><strong>Versie:</strong> 1.1</p>
+                    <p><strong>Versie:</strong> 1.2</p>
                     <p><strong>Laatste Update:</strong> December 2025</p>
-                    <p class="pt-4 text-slate-400">Karuta Collection Manager voor het beheren van je Discord Karuta kaarten collectie.</p>
+                    <p class="pt-4 text-slate-400">Data wordt lokaal opgeslagen per browser (geen publieke database). Importeer zelf je collectie en exporteer regelmatig voor een eigen backup.</p>
                 </div>
             </section>
         </div>
@@ -90,6 +97,8 @@
 
     <script src="../js/storage.js"></script>
     <script src="../js/utils.js"></script>
+    <script src="../js/ui.js"></script>
     <script src="../js/settings.js"></script>
+    <div id="toast-container" aria-live="polite"></div>
 </body>
 </html>

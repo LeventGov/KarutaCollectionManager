@@ -32,3 +32,23 @@
     transform: translateY(0);
   }
 }
+
+#toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 60;
+}
+
+.toast {
+  min-width: 240px;
+  max-width: 360px;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 12px 14px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  animation: fadeIn 0.2s ease-out;
+}

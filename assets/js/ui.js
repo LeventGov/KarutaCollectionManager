@@ -25,7 +25,7 @@ class UIManager {
           ? 'card-selected shadow-lg shadow-indigo-500/20' 
           : 'border-slate-700 hover:border-slate-600'
       }`;
-      div.onclick = () => window.toggleSelect(card.code);
+      div.onclick = () => window.openCardDetails(card.code);
 
       let imgContent = '';
       if (card.imageUrl) {
@@ -43,14 +43,27 @@ class UIManager {
       }
 
       div.innerHTML = `
-        <div class="absolute top-2 right-2 z-10">
-          <div class="${
-            isSelected 
-              ? 'bg-indigo-600 text-white' 
-              : 'bg-slate-900/50 text-slate-400 opacity-0 group-hover:opacity-100'
-          } p-1 rounded-md transition-all">
+        <div class="absolute top-2 right-2 z-10 flex gap-1">
+          <button 
+            onclick="event.stopPropagation(); window.toggleSelect('${card.code}')" 
+            class="${
+              isSelected 
+                ? 'bg-indigo-600 text-white' 
+                : 'bg-slate-900/70 text-slate-300 hover:bg-slate-800'
+            } p-1.5 rounded-md transition-all border border-slate-700/70"
+            title="Selecteer kaart"
+            aria-label="Selecteer kaart"
+          >
             <i class="ph ${isSelected ? 'ph-check-square' : 'ph-square'} text-lg"></i>
-          </div>
+          </button>
+          <button 
+            onclick="event.stopPropagation(); window.openCardDetails('${card.code}')" 
+            class="bg-slate-900/70 text-slate-200 hover:bg-indigo-600 hover:text-white rounded-md p-1.5 transition-colors border border-slate-700/80"
+            title="Details bewerken"
+            aria-label="Open kaart details"
+          >
+            <i class="ph ph-note-pencil text-lg"></i>
+          </button>
         </div>
         <div class="flex h-full">
           <div class="w-1/3 bg-slate-900 relative min-h-[120px]">
@@ -180,14 +193,153 @@ class UIManager {
    * @returns {string}
    */
   static getImportMode() {
-    return document.querySelector('input[name="importMode"]:checked').value;
+    const el = document.querySelector('input[name="importMode"]:checked');
+    return el ? el.value : 'merge';
   }
 
   /**
    * Show alert message
    * @param {string} message - Message to show
    */
-  static alert(message) {
-    alert(message);
+  static showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    const colors = {
+      info: 'bg-slate-800 border-slate-600 text-slate-100',
+      success: 'bg-emerald-900/70 border-emerald-600 text-emerald-100',
+      warning: 'bg-amber-900/70 border-amber-600 text-amber-100',
+      error: 'bg-red-900/70 border-red-600 text-red-100'
+    };
+    toast.className = `toast ${colors[type] || colors.info}`;
+    toast.innerHTML = `
+      <div class="flex items-center gap-3">
+        <span class="flex-1 text-sm">${message}</span>
+        <button class="text-xs text-slate-300 hover:text-white" aria-label="Sluit" onclick="this.parentElement.parentElement.remove()">×</button>
+      </div>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+
+  static setDetailValue(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = value ?? '';
+  }
+
+  static showDetailModal(card) {
+    const modal = document.getElementById('detail-modal');
+    if (!modal) return;
+
+    if (!card) {
+      modal.classList.add('hidden');
+      return;
+    }
+
+    modal.classList.remove('hidden');
+    const withDefaults = applyCardDefaults(card);
+    document.getElementById('detail-title').innerText = withDefaults.name || 'Kaart details';
+
+    UIManager.setDetailValue('detail-code', withDefaults.code);
+    UIManager.setDetailValue('detail-name', withDefaults.name);
+    UIManager.setDetailValue('detail-series', withDefaults.series);
+    UIManager.setDetailValue('detail-edition', withDefaults.edition);
+    UIManager.setDetailValue('detail-number', withDefaults.print || withDefaults.number);
+    UIManager.setDetailValue('detail-quality', withDefaults.quality);
+    UIManager.setDetailValue('detail-tag', withDefaults.tag);
+    UIManager.setDetailValue('detail-alias', withDefaults.alias);
+    UIManager.setDetailValue('detail-obtainedDate', withDefaults.obtainedDate);
+    UIManager.setDetailValue('detail-obtainedTimestamp', withDefaults.obtainedTimestamp);
+    UIManager.setDetailValue('detail-burnValue', withDefaults.burnValue);
+    UIManager.setDetailValue('detail-dyeCode', withDefaults.dyeCode);
+    UIManager.setDetailValue('detail-dyeName', withDefaults.dyeName);
+    UIManager.setDetailValue('detail-frame', withDefaults.frame);
+    UIManager.setDetailValue('detail-morphed', withDefaults.morphed);
+    UIManager.setDetailValue('detail-trimmed', withDefaults.trimmed);
+    UIManager.setDetailValue('detail-wishlists', withDefaults.wishlists);
+    UIManager.setDetailValue('detail-fights', withDefaults.fights);
+    UIManager.setDetailValue('detail-dropQuality', withDefaults.dropQuality);
+    UIManager.setDetailValue('detail-dropper', withDefaults.dropper);
+    UIManager.setDetailValue('detail-grabber', withDefaults.grabber);
+    UIManager.setDetailValue('detail-guild', withDefaults.guild);
+    UIManager.setDetailValue('detail-workerEffort', withDefaults.workerEffort);
+    UIManager.setDetailValue('detail-workerStyle', withDefaults.workerStyle);
+    UIManager.setDetailValue('detail-workerPurity', withDefaults.workerPurity);
+    UIManager.setDetailValue('detail-workerGrabber', withDefaults.workerGrabber);
+    UIManager.setDetailValue('detail-workerDropper', withDefaults.workerDropper);
+    UIManager.setDetailValue('detail-workerQuickness', withDefaults.workerQuickness);
+    UIManager.setDetailValue('detail-workerToughness', withDefaults.workerToughness);
+    UIManager.setDetailValue('detail-workerVanity', withDefaults.workerVanity);
+    UIManager.setDetailValue('detail-workerRecoveryDate', withDefaults.workerRecoveryDate);
+    UIManager.setDetailValue('detail-workerRecoveryTimestamp', withDefaults.workerRecoveryTimestamp);
+    UIManager.updateDetailImage(withDefaults.imageUrl);
+  }
+
+  static getDetailFormData() {
+    const val = (id) => {
+      const el = document.getElementById(id);
+      return el ? el.value : '';
+    };
+
+    const numberVal = (id) => parseInt(val(id)) || 0;
+
+    return {
+      code: val('detail-code'),
+      name: val('detail-name'),
+      series: val('detail-series'),
+      edition: numberVal('detail-edition'),
+      print: numberVal('detail-number'),
+      number: numberVal('detail-number'),
+      quality: val('detail-quality'),
+      tag: val('detail-tag'),
+      alias: val('detail-alias'),
+      obtainedDate: val('detail-obtainedDate'),
+      obtainedTimestamp: val('detail-obtainedTimestamp'),
+      burnValue: val('detail-burnValue'),
+      dyeCode: val('detail-dyeCode'),
+      dyeName: val('detail-dyeName'),
+      frame: val('detail-frame'),
+      morphed: val('detail-morphed'),
+      trimmed: val('detail-trimmed'),
+      wishlists: val('detail-wishlists'),
+      fights: val('detail-fights'),
+      dropQuality: val('detail-dropQuality'),
+      dropper: val('detail-dropper'),
+      grabber: val('detail-grabber'),
+      guild: val('detail-guild'),
+      workerEffort: val('detail-workerEffort'),
+      workerStyle: val('detail-workerStyle'),
+      workerPurity: val('detail-workerPurity'),
+      workerGrabber: val('detail-workerGrabber'),
+      workerDropper: val('detail-workerDropper'),
+      workerQuickness: val('detail-workerQuickness'),
+      workerToughness: val('detail-workerToughness'),
+      workerVanity: val('detail-workerVanity'),
+      workerRecoveryDate: val('detail-workerRecoveryDate'),
+      workerRecoveryTimestamp: val('detail-workerRecoveryTimestamp'),
+      imageUrl: val('detail-image-url')
+    };
+  }
+
+  static updateDetailImage(url) {
+    UIManager.setDetailValue('detail-image-url', url || '');
+    const preview = document.getElementById('detail-image-preview');
+    const placeholder = document.getElementById('detail-image-placeholder');
+    if (preview) {
+      if (url) {
+        preview.src = url;
+        preview.classList.remove('hidden');
+        if (placeholder) placeholder.classList.add('hidden');
+      } else {
+        preview.src = '';
+        preview.classList.add('hidden');
+        if (placeholder) placeholder.classList.remove('hidden');
+      }
+    }
+  }
+
+  static isDetailModalOpen() {
+    const modal = document.getElementById('detail-modal');
+    return modal ? !modal.classList.contains('hidden') : false;
   }
 }

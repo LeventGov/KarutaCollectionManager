@@ -1,28 +1,132 @@
+const CARD_DEFAULTS = {
+  code: '',
+  number: 0,
+  edition: 1,
+  name: 'Unknown',
+  series: 'Unknown',
+  quality: '★☆☆☆',
+  obtainedDate: '',
+  obtainedTimestamp: '',
+  burnValue: '',
+  dyeCode: '',
+  dyeName: '',
+  frame: '',
+  morphed: '',
+  trimmed: '',
+  tag: '',
+  alias: '',
+  wishlists: '',
+  fights: '',
+  dropQuality: '',
+  dropper: '',
+  grabber: '',
+  guild: '',
+  workerEffort: '',
+  workerStyle: '',
+  workerPurity: '',
+  workerGrabber: '',
+  workerDropper: '',
+  workerQuickness: '',
+  workerToughness: '',
+  workerVanity: '',
+  workerRecoveryDate: '',
+  workerRecoveryTimestamp: '',
+  imageUrl: ''
+};
+
+function applyCardDefaults(card = {}) {
+  const printVal = parseInt(card.print ?? card.number ?? 0) || 0;
+  const editionVal = parseInt(card.edition ?? 1) || 1;
+
+  return {
+    ...CARD_DEFAULTS,
+    ...card,
+    print: printVal,
+    number: card.number ?? printVal,
+    edition: editionVal,
+    quality: card.quality || '★☆☆☆',
+    tag: card.tag || '',
+    imageUrl: card.imageUrl || ''
+  };
+}
+
 function parseCSVLine(line) {
   if (!line || !line.trim()) return [];
-  const isTab = line.includes('\t');
-  const separator = isTab ? '\t' : ',';
-  const parts = line.split(separator);
-  return parts.map(p => p.trim()).filter(p => p.length > 0);
+  const parts = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    const next = line[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if ((char === ',' || char === '\t') && !inQuotes) {
+      parts.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  if (current.length > 0 || line.endsWith(',') || line.endsWith('\t')) {
+    parts.push(current.trim());
+  }
+
+  return parts;
 }
 
 function isValidCard(card) {
   return card && card.code && card.code.length >= 3 && card.name;
 }
 
-function createCardFromParts(parts) {
-  if (parts.length < 2) return null;
+function createCardFromRecord(record) {
+  if (!record || !record.code) return null;
+
   const card = {
-    code: parts[0].toLowerCase(),
-    name: parts[1] || 'Unknown',
-    series: parts[2] || 'Unknown',
-    edition: parseInt(parts[3]) || 1,
-    print: parseInt(parts[4]) || 0,
-    quality: parts[5] || '★☆☆☆',
-    tag: parts[6] || '',
-    imageUrl: ''
+    code: (record.code || '').toLowerCase(),
+    number: parseInt(record.number || record.print || 0) || 0,
+    print: parseInt(record.print || record.number || 0) || 0,
+    edition: parseInt(record.edition) || 1,
+    name: record.name || record.character || 'Unknown',
+    series: record.series || 'Unknown',
+    quality: record.quality || '★☆☆☆',
+    obtainedDate: record.obtainedDate || '',
+    obtainedTimestamp: record.obtainedTimestamp || '',
+    burnValue: record.burnValue || '',
+    dyeCode: record.dyeCode || record['dye.code'] || '',
+    dyeName: record.dyeName || record['dye.name'] || '',
+    frame: record.frame || '',
+    morphed: record.morphed || '',
+    trimmed: record.trimmed || '',
+    tag: record.tag || '',
+    alias: record.alias || '',
+    wishlists: record.wishlists || '',
+    fights: record.fights || '',
+    dropQuality: record.dropQuality || record.dropquality || '',
+    dropper: record.dropper || '',
+    grabber: record.grabber || '',
+    guild: record.guild || '',
+    workerEffort: record.workerEffort || record['worker.effort'] || '',
+    workerStyle: record.workerStyle || record['worker.style'] || '',
+    workerPurity: record.workerPurity || record['worker.purity'] || '',
+    workerGrabber: record.workerGrabber || record['worker.grabber'] || '',
+    workerDropper: record.workerDropper || record['worker.dropper'] || '',
+    workerQuickness: record.workerQuickness || record['worker.quickness'] || '',
+    workerToughness: record.workerToughness || record['worker.toughness'] || '',
+    workerVanity: record.workerVanity || record['worker.vanity'] || '',
+    workerRecoveryDate: record.workerRecoveryDate || record['worker.recoveryDate'] || '',
+    workerRecoveryTimestamp: record.workerRecoveryTimestamp || record['worker.recoveryTimestamp'] || '',
+    imageUrl: record.imageUrl || ''
   };
-  return isValidCard(card) ? card : null;
+
+  return isValidCard(card) ? applyCardDefaults(card) : null;
 }
 
 function formatDiscordCommand(type, codes, argument = '') {
@@ -57,86 +161,83 @@ function downloadJSON(data, filename = 'export.json') {
   downloadLink.remove();
 }
 
+function normalizeQualityStars(value) {
+  if (!value) return '★☆☆☆';
+  if (value.includes('★')) return value;
+  const map = {
+    damaged: '★☆☆☆',
+    poor: '★☆☆☆',
+    good: '★★☆☆',
+    excellent: '★★★☆',
+    mint: '★★★★'
+  };
+  const key = value.toLowerCase().trim();
+  return map[key] || '★☆☆☆';
+}
+
 function parseDiscordFormat(text) {
   const lines = text.split('\n');
   const cards = [];
+  const separators = /[\.|·]/;
 
   lines.forEach(line => {
     if (!line || !line.trim()) return;
 
-    if (line.includes('·')) {
-      const cleaned = line.replace(/^[\u{1F300}-\u{1F9FF}]|\s*[\u{1F300}-\u{1F9FF}]/gu, '').trim();
-      const parts = cleaned.split('·').map(p => p.trim()).filter(p => p.length > 0);
-      
-      if (parts.length >= 4) {
-        let code = '';
-        let name = '';
-        let series = '';
-        let quality = '★☆☆☆';
-        let print = 0;
-        let edition = 1;
+    const firstChar = line.trim().charAt(0);
+    const emojiMatch = /^(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u.exec(line.trim());
+    const emoji = emojiMatch ? emojiMatch[0] : '';
+    const tagged = emoji && emoji !== '◾';
 
-        const codeMatch = parts.find(p => /^[a-z0-9]{4,8}$/i.test(p));
-        if (codeMatch) code = codeMatch.toLowerCase();
+    const withoutEmoji = emoji ? line.trim().slice(emoji.length).trim() : line.trim();
+    const parts = withoutEmoji.split(separators).map(p => p.trim()).filter(Boolean);
+    if (parts.length < 6) return;
 
-        const qualityMatch = parts.find(p => p.includes('★'));
-        if (qualityMatch) quality = qualityMatch;
+    const [codeRaw, qualityRaw, printRaw, editionRaw, seriesRaw, ...rest] = parts;
+    const nameRaw = rest.join(' ');
 
-        const printMatch = parts.find(p => p.startsWith('#'));
-        if (printMatch) print = parseInt(printMatch.replace('#', '').trim());
+    const code = (codeRaw || '').toLowerCase();
+    const print = parseInt((printRaw || '').replace('#', '').trim()) || 0;
+    const edition = parseInt((editionRaw || '').replace('◈', '').trim()) || 1;
+    const quality = normalizeQualityStars(qualityRaw);
+    const tag = tagged ? emoji : '';
 
-        const editionMatch = parts.find(p => p.startsWith('◈'));
-        if (editionMatch) edition = parseInt(editionMatch.replace('◈', '').trim()) || 1;
+    if (!code || !nameRaw) return;
 
-        const remaining = parts.filter(p => 
-          p !== code && p !== codeMatch &&
-          p !== quality && 
-          p !== printMatch && 
-          p !== editionMatch
-        );
-
-        if (remaining.length >= 2) {
-          series = remaining[0];
-          name = remaining[1];
-        } else if (remaining.length === 1) {
-          name = remaining[0];
-        }
-
-        if (code && name) {
-          cards.push({
-            code,
-            name,
-            series: series || 'Unknown',
-            edition,
-            print,
-            quality,
-            tag: '',
-            imageUrl: ''
-          });
-        }
-      }
-    } else {
-      const card = createCardFromParts(parseCSVLine(line));
-      if (card) cards.push(card);
-    }
+    cards.push(applyCardDefaults({
+      code,
+      name: nameRaw,
+      series: seriesRaw || 'Unknown',
+      edition,
+      print,
+      number: print,
+      quality,
+      tag
+    }));
   });
 
   return cards;
 }
 
 function parseFileContent(content, fileType = 'csv') {
-  const lines = content.split('\n');
-  const cards = [];
+  const rows = content.split(/\r?\n/).filter(r => r.trim().length > 0).map(parseCSVLine).filter(r => r.length > 0);
+  if (rows.length === 0) return [];
 
-  lines.forEach((line, index) => {
-    if (index === 0 && (line.toLowerCase().includes('code') || line.toLowerCase().includes('naam'))) {
-      return;
-    }
-    const card = createCardFromParts(parseCSVLine(line));
-    if (card) cards.push(card);
-  });
+  const header = rows[0].map(h => h.replace(/"/g, '').trim().toLowerCase());
+  const records = [];
 
-  return cards;
+  for (let i = 1; i < rows.length; i += 1) {
+    const row = rows[i];
+    const record = {};
+    header.forEach((key, idx) => {
+      const val = row[idx];
+      if (key) record[key] = val;
+    });
+    if (record.code) records.push(record);
+  }
+
+  return records
+    .map(createCardFromRecord)
+    .filter(Boolean);
 }
 
 function getCardKey(card) {
@@ -144,13 +245,14 @@ function getCardKey(card) {
 }
 
 function smartMergeCollections(existing, newCards) {
-  const existingMap = new Map(existing.map(c => [getCardKey(c), c]));
-  const newMap = new Map(newCards.map(c => [getCardKey(c), c]));
+  const existingMap = new Map(existing.map(c => [getCardKey(c), applyCardDefaults(c)]));
+  const newMap = new Map(newCards.map(c => [getCardKey(c), applyCardDefaults(c)]));
   
   const result = {
     added: [],
     updated: [],
-    unchanged: []
+    unchanged: [],
+    removed: []
   };
 
   newCards.forEach(newCard => {
@@ -163,13 +265,19 @@ function smartMergeCollections(existing, newCards) {
                      oldCard.tag !== newCard.tag;
       
       if (changed) {
-        newCard.imageUrl = oldCard.imageUrl;
-        result.updated.push(newCard);
+        const mergedCard = applyCardDefaults({ ...oldCard, ...newCard, imageUrl: oldCard.imageUrl || newCard.imageUrl });
+        result.updated.push(mergedCard);
       } else {
-        result.unchanged.push(oldCard);
+        result.unchanged.push(applyCardDefaults(oldCard));
       }
     } else {
-      result.added.push(newCard);
+      result.added.push(applyCardDefaults(newCard));
+    }
+  });
+
+  existingMap.forEach((oldCard, key) => {
+    if (!newMap.has(key)) {
+      result.removed.push(applyCardDefaults(oldCard));
     }
   });
 
@@ -178,7 +286,8 @@ function smartMergeCollections(existing, newCards) {
     stats: {
       added: result.added.length,
       updated: result.updated.length,
-      unchanged: result.unchanged.length
+      unchanged: result.unchanged.length,
+      removed: result.removed.length
     }
   };
 }
