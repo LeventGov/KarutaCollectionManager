@@ -526,10 +526,18 @@ class KarutaApp {
     const ext = fileName.split('.').pop().toLowerCase();
     let newCards = [];
 
-    if (ext === 'csv' || ext === 'txt') {
+    if (ext === 'json') {
+      try {
+        const parsed = JSON.parse(content);
+        newCards = Array.isArray(parsed) ? parsed.map(applyCardDefaults).filter(isValidCard) : [];
+      } catch (error) {
+        UIManager.showToast('Ongeldig JSON formaat.', 'error');
+        return;
+      }
+    } else if (ext === 'csv') {
       newCards = parseFileContent(content, ext);
     } else {
-      UIManager.showToast('Bestandstype niet ondersteund. Gebruik CSV of TXT.', 'warning');
+      UIManager.showToast('Bestandstype niet ondersteund. Gebruik CSV of JSON.', 'warning');
       return;
     }
 

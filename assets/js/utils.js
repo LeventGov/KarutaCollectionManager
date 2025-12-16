@@ -37,6 +37,11 @@ const CARD_DEFAULTS = {
 function applyCardDefaults(card = {}) {
   const printVal = parseInt(card.print ?? card.number ?? 0) || 0;
   const editionVal = parseInt(card.edition ?? 1) || 1;
+  
+  let imageUrl = card.imageUrl || '';
+  if (imageUrl && imageUrl.toUpperCase() === 'PLACEHOLDER') {
+    imageUrl = 'assets/images/placeholder.png';
+  }
 
   return {
     ...CARD_DEFAULTS,
@@ -46,7 +51,7 @@ function applyCardDefaults(card = {}) {
     edition: editionVal,
     quality: card.quality || '★☆☆☆',
     tag: card.tag || '',
-    imageUrl: card.imageUrl || ''
+    imageUrl: imageUrl
   };
 }
 
@@ -89,6 +94,11 @@ function isValidCard(card) {
 function createCardFromRecord(record) {
   if (!record || !record.code) return null;
 
+  let imageUrl = record.imageUrl || record.imageurl || '';
+  if (imageUrl && (imageUrl.toUpperCase() === 'PLACEHOLDER' || imageUrl === 'assets/images/placeholder.png')) {
+    imageUrl = 'assets/images/placeholder.png';
+  }
+
   const card = {
     code: (record.code || '').toLowerCase(),
     number: parseInt(record.number || record.print || 0) || 0,
@@ -123,7 +133,7 @@ function createCardFromRecord(record) {
     workerVanity: record.workerVanity || record['worker.vanity'] || '',
     workerRecoveryDate: record.workerRecoveryDate || record['worker.recoveryDate'] || '',
     workerRecoveryTimestamp: record.workerRecoveryTimestamp || record['worker.recoveryTimestamp'] || '',
-    imageUrl: record.imageUrl || ''
+    imageUrl: imageUrl
   };
 
   return isValidCard(card) ? applyCardDefaults(card) : null;
