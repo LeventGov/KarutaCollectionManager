@@ -92,36 +92,43 @@ class UIManager {
       paginatorDiv.innerHTML = `
         <button 
           onclick="window.goToPage(${Math.max(0, page - 1)})" 
-          class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded transition-colors ${page === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
+          class="px-3 sm:px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-2 font-medium ${page === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
           aria-label="Vorige pagina"
           ${page === 0 ? 'disabled' : ''}
         >
-          <i class="ph ph-arrow-left" aria-hidden="true"></i>
+          <i class="ph ph-caret-left text-lg" aria-hidden="true"></i>
+          <span class="hidden sm:inline text-sm">Vorige</span>
         </button>
       `;
 
       const pageInfo = document.createElement('div');
       pageInfo.className = 'flex items-center gap-1 sm:gap-2 flex-wrap justify-center';
-      pageInfo.innerHTML = `
-        <span class="text-xs sm:text-sm text-slate-400 whitespace-nowrap">Pagina</span>
-        <select onchange="window.goToPage(parseInt(this.value))" class="bg-slate-700 text-slate-100 border border-slate-600 rounded px-1.5 sm:px-2 py-1 text-xs sm:text-sm focus:ring-1 focus:ring-indigo-500 max-w-[80px] sm:max-w-none">
-      `;
+      
+      const pageSelect = document.createElement('select');
+      pageSelect.onchange = (e) => window.goToPage(parseInt(e.target.value));
+      pageSelect.className = 'bg-slate-700 text-slate-100 border-2 border-slate-600 rounded px-2 sm:px-3 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium cursor-pointer hover:bg-slate-600 transition-colors';
+      pageSelect.setAttribute('aria-label', 'Selecteer pagina');
+      
       for (let i = 0; i < totalPages; i++) {
         const option = document.createElement('option');
         option.value = i;
-        option.textContent = `${i + 1}/${totalPages}`;
+        option.textContent = `Pagina ${i + 1} van ${totalPages}`;
         option.selected = i === page;
-        pageInfo.querySelector('select').appendChild(option);
+        pageSelect.appendChild(option);
       }
-      pageInfo.innerHTML += `</select>`;
+      
+      pageInfo.appendChild(pageSelect);
       paginatorDiv.appendChild(pageInfo);
 
       const nextBtn = document.createElement('button');
       nextBtn.onclick = () => window.goToPage(Math.min(totalPages - 1, page + 1));
-      nextBtn.className = `px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded transition-colors ${page === totalPages - 1 ? 'opacity-50 cursor-not-allowed' : ''}`;
+      nextBtn.className = `px-3 sm:px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-2 font-medium ${page === totalPages - 1 ? 'opacity-50 cursor-not-allowed' : ''}`;
       nextBtn.disabled = page === totalPages - 1;
       nextBtn.setAttribute('aria-label', 'Volgende pagina');
-      nextBtn.innerHTML = `<i class="ph ph-arrow-right" aria-hidden="true"></i>`;
+      nextBtn.innerHTML = `
+        <span class="hidden sm:inline text-sm">Volgende</span>
+        <i class="ph ph-caret-right text-lg" aria-hidden="true"></i>
+      `;
       paginatorDiv.appendChild(nextBtn);
 
       grid.appendChild(paginatorDiv);
