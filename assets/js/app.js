@@ -42,7 +42,9 @@ class KarutaApp {
         const response = await fetch(file);
         if (response.ok) {
           const html = await response.text();
-          modalsContainer.innerHTML += html;
+          const div = document.createElement('div');
+          div.innerHTML = html;
+          modalsContainer.appendChild(div.firstElementChild);
         } else {
           console.warn(`Failed to load modal: ${file}`);
         }
@@ -55,7 +57,9 @@ class KarutaApp {
   async loadCollection() {
     try {
       this.isLoadingCollection = true;
-      this.showLoadingProgress(true);
+      const startTime = performance.now();
+      const showLoadingTimer = setTimeout(() => this.showLoadingProgress(true), 300);
+      
       const exists = await storage.exists();
       if (exists) {
         this.collection = (await storage.load()).map(applyCardDefaults);
@@ -63,6 +67,8 @@ class KarutaApp {
         this.collection = this.initialData;
         await storage.save(this.collection);
       }
+      
+      clearTimeout(showLoadingTimer);
       this.loadingProgress = 100;
       this.showLoadingProgress(false);
     } catch (error) {
@@ -529,9 +535,14 @@ class KarutaApp {
     if (ext === 'json') {
       try {
         const parsed = JSON.parse(content);
-        newCards = Array.isArray(parsed) ? parsed.map(applyCardDefaults).filter(isValidCard) : [];
+        if (!validateJsonCards(parsed)) {
+          UIManager.showToast('Ongeldig JSON formaat of onverwachte gegevens.', 'error');
+          return;
+        }
+        newCards = Array.isArray(parsed) ? parsed.map(sanitizeCardData).map(applyCardDefaults).filter(isValidCard) : [];
       } catch (error) {
         UIManager.showToast('Ongeldig JSON formaat.', 'error');
+        console.error('JSON parse error:', error);
         return;
       }
     } else if (ext === 'csv') {
@@ -751,9 +762,12 @@ window.clearFile = () => {
   document.getElementById('file-info').classList.add('hidden');
 };
 
-window.copyToClipboard = copyToClipboard;
-
 window.addEventListener('DOMContentLoaded', () => {
+  // Expose utilities to window
+  window.copyToClipboard = copyToClipboard;
+  window.validateJsonCards = validateJsonCards;
+  window.parseDiscordFormat = parseDiscordFormat;
+  
   app.init().catch(err => {
     console.error('App initialization error:', err);
     if (window.UIManager?.showToast) {
