@@ -1,0 +1,42 @@
+<div id="image-picker-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 sm:p-4" role="dialog" aria-labelledby="image-picker-title" aria-modal="true">
+    <div class="bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-full border border-slate-700 flex flex-col max-h-[95vh] sm:max-h-[90vh]">
+        <div class="p-3 sm:p-4 border-b border-slate-700 flex flex-col gap-2 sm:gap-3">
+            <h2 id="image-picker-title" class="text-base sm:text-lg font-bold text-white flex items-center gap-2 flex-wrap">
+                <i class="ph ph-images text-indigo-400" aria-hidden="true"></i> 
+                <span class="break-words">Selecteer afbeelding voor <span id="picker-card-name" class="text-indigo-400">-</span></span>
+            </h2>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+                <div class="flex-1 flex flex-col sm:flex-row gap-2">
+                    <input id="image-picker-search-name" type="text" placeholder="Naam" class="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs sm:text-sm text-slate-200" aria-label="Zoek op naam">
+                    <input id="image-picker-search-series" type="text" placeholder="Serie" class="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs sm:text-sm text-slate-200" aria-label="Zoek op serie">
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="window.searchImagePicker()" class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 text-xs sm:text-sm">Zoek</button>
+                    <button onclick="usePlaceholderImage(app.currentPickerCard?.code)" class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-500 rounded text-white text-xs sm:text-sm">Gebruik placeholder</button>
+                    <button 
+                        onclick="closeImagePicker()" 
+                        class="text-slate-400 hover:text-white p-1"
+                        aria-label="Sluit"
+                    >
+                        <i class="ph ph-x text-xl sm:text-2xl" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-3 sm:p-6 flex-1 overflow-y-auto">
+            <div class="space-y-4 sm:space-y-6">
+                <div id="image-picker-loading" class="text-center py-8 sm:py-12" aria-live="polite">
+                    <div class="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-indigo-500 border-t-transparent" role="status" aria-label="Laden"></div>
+                    <p class="text-slate-400 mt-4 text-sm sm:text-base">Afbeeldingen laden...</p>
+                </div>
+                <div id="image-picker-grid" class="hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4" role="list" aria-label="Beschikbare afbeeldingen">
+                </div>
+                <div id="image-picker-error" class="hidden text-center py-8 sm:py-12" role="alert">
+                    <i class="ph ph-warning-circle text-4xl sm:text-5xl text-amber-500 mb-4" aria-hidden="true"></i>
+                    <p class="text-slate-300 text-sm sm:text-base">Geen resultaten gevonden</p>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-2">Probeer een andere zoekopdracht</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

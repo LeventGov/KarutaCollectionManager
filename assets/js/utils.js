@@ -175,7 +175,6 @@ function normalizeQualityStars(value) {
     const key = value.toLowerCase().trim();
     return map[key] || '★☆☆☆';
   }
-  // Handle numeric quality (0-4)
   const num = parseInt(value);
   if (num === 0) return '★☆☆☆';
   if (num === 1) return '★☆☆☆';
@@ -204,7 +203,6 @@ function parseDiscordFormat(text) {
     const [codeRaw, qualityRaw, printRaw, editionRaw, seriesRaw, ...rest] = parts;
     const nameRaw = rest.join(' ');
 
-    // Strip any remaining emoji from code and name
     const cleanCode = (codeRaw || '').replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim().toLowerCase();
     const cleanName = (nameRaw || '').replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
     

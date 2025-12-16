@@ -1,79 +1,186 @@
-// API calls and external service integration
-
 class APIManager {
   constructor() {
-    this.jikanBaseUrl = 'https://api.jikan.moe/v4';
+    this.aniListUrl = 'https://graphql.anilist.co';
   }
 
-  /**
-   * Fetch character image from Jikan API
-   * @param {string} characterName - Name of the character
-   * @returns {Promise<string|null>} Image URL or null if not found
-   */
-  async fetchCharacterImage(characterName) {
-    try {
-      const response = await fetch(
-        `${this.jikanBaseUrl}/characters?q=${encodeURIComponent(characterName)}&limit=1`
-      );
-      const json = await response.json();
-      
-      if (json.data && json.data.length > 0) {
-        return json.data[0].images.jpg.image_url;
-      }
-      return null;
-    } catch (error) {
-      console.error('Error fetching character image:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Search for anime characters
-   * @param {string} query - Search query
-   * @param {number} limit - Max results
-   * @returns {Promise<Array>} Array of character data
-   */
   async searchCharacters(query, limit = 10) {
     try {
-      const response = await fetch(
-        `${this.jikanBaseUrl}/characters?q=${encodeURIComponent(query)}&limit=${limit}`
-      );
+      const gqlQuery = `
+        query {
+          characters: Character(search: "${query.replace(/"/g, '\\"')}", sort: SEARCH_MATCH) {
+            id
+            name {
+              full
+            }
+            image {
+              large
+            }
+            media {
+              edges {
+                node {
+                  title {
+                    english
+                    romaji
+                  }
+                }
+              }
+            }
+          }
+        }
+      `;
+      const response = await fetch(this.aniListUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: gqlQuery })
+      });
       const json = await response.json();
-      return json.data || [];
+      return json.data?.characters ? [json.data.characters] : [];
     } catch (error) {
-      console.error('Error searching characters:', error);
+      console.error('Error searching characters on AniList:', error);
       throw error;
     }
   }
-
-  /**
-   * Fetch multiple character images for selection
-   * @param {string} characterName - Name of the character
-   * @param {number} limit - Max results
-   * @returns {Promise<Array>} Array of image options with metadata
-   */
-  async fetchCharacterImages(characterName, limit = 12) {
+  async fetchCharacterImages(characterName = '', seriesName = '') {
     try {
-      const response = await fetch(
-        `${this.jikanBaseUrl}/characters?q=${encodeURIComponent(characterName)}&limit=${limit}`
-      );
-      const json = await response.json();
-      
-      if (json.data && json.data.length > 0) {
-        return json.data.map(char => ({
-          url: char.images.jpg.image_url,
-          name: char.name,
-          nameKanji: char.name_kanji || '',
-          favorites: char.favorites || 0
-        }));
+      if (seriesName.trim()) {
+        return await this.searchBySeriesAndCharacter(seriesName, characterName);
+      }
+      if (characterName.trim()) {
+        return await this.searchByCharacterName(characterName);
       }
       return [];
     } catch (error) {
-      console.error('Error fetching character images:', error);
+      console.error('Error fetching character images from AniList:', error);
       throw error;
+    }
+  }
+  async searchBySeriesAndCharacter(seriesName, characterName = '') {
+    try {
+      const query = `
+        query ($search: String) {
+          Media(search: $search, type: ANIME) {
+            id
+            title {
+              romaji
+              english
+            }
+            characters(sort: [ROLE, RELEVANCE], perPage: 50) {
+              nodes {
+                id
+                name {
+                  full
+                  userPreferred
+                }
+                image {
+                  large
+                }
+              }
+            }
+          }
+        }
+      `;
+      const response = await fetch(this.aniListUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query,
+          variables: { search: seriesName }
+        })
+      });
+      const json = await response.json();
+      
+      if (json.errors) {
+        console.error('AniList GraphQL error:', json.errors);
+        return [];
+      }
+
+      if (!json.data?.Media?.characters?.nodes) {
+        return [];
+      }
+
+      let characters = json.data.Media.characters.nodes;
+
+      if (characterName.trim()) {
+        const charLower = characterName.toLowerCase();
+        const filtered = characters.filter(char =>
+          char.name?.full?.toLowerCase().includes(charLower) ||
+          char.name?.userPreferred?.toLowerCase().includes(charLower)
+        );
+        characters = filtered.length > 0 ? filtered : characters;
+      }
+
+      return characters.map(char => {
+        const img = char.image?.large || 'assets/images/placeholder.png';
+        return {
+          image: img,
+          url: img,
+          name: char.name?.userPreferred || char.name?.full || 'Unknown',
+          favorites: 0
+        };
+      });
+    } catch (error) {
+      console.error('Error searching by series:', error);
+      return [];
+    }
+  }
+  async searchByCharacterName(characterName) {
+    try {
+      const query = `
+        query ($search: String) {
+          Character(search: $search) {
+            id
+            name {
+              full
+              userPreferred
+            }
+            image {
+              large
+            }
+            media {
+              edges {
+                node {
+                  title {
+                    romaji
+                  }
+                }
+              }
+            }
+          }
+        }
+      `;
+      const response = await fetch(this.aniListUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query,
+          variables: { search: characterName }
+        })
+      });
+      const json = await response.json();
+
+      if (json.errors) {
+        console.error('AniList GraphQL error:', json.errors);
+        return [];
+      }
+
+      if (!json.data?.Character) {
+        return [];
+      }
+
+      const char = json.data.Character;
+      const img = char.image?.large || 'assets/images/placeholder.png';
+      return [{
+        image: img,
+        url: img,
+        name: char.name?.userPreferred || char.name?.full || 'Unknown',
+        series: char.media?.edges?.[0]?.node?.title?.romaji || char.media?.edges?.[0]?.node?.title?.english || '',
+        favorites: 0
+      }];
+    } catch (error) {
+      console.error('Error searching by character name:', error);
+      return [];
     }
   }
 }
 
-// Create global instance
-const api = new APIManager();
+window.api = new APIManager();
