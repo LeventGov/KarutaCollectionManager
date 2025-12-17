@@ -1,23 +1,23 @@
-// UI rendering and updates
-
 class UIManager {
-  /**
-   * Render the card grid
-   * @param {Array} filteredCards - Filtered cards to display
-   * @param {Set} selectedCards - Set of selected card codes
-   */
-  static renderGrid(filteredCards, selectedCards) {
+  static renderGrid(filteredCards, selectedCards, pageSize = 25, page = 0) {
     const grid = document.getElementById('card-grid');
+    if (!grid) return;
     grid.innerHTML = '';
 
-    document.getElementById('result-count').innerText = `${filteredCards.length} resultaten`;
+    const resultCount = document.getElementById('result-count');
+    if (resultCount) resultCount.innerText = `${filteredCards.length} resultaten`;
 
     if (filteredCards.length === 0) {
       grid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 border-2 border-dashed border-slate-800 rounded-xl">Geen kaarten gevonden.</div>`;
       return;
     }
 
-    filteredCards.forEach(card => {
+    const totalPages = Math.ceil(filteredCards.length / pageSize);
+    const startIdx = page * pageSize;
+    const endIdx = startIdx + pageSize;
+    const pageCards = filteredCards.slice(startIdx, endIdx);
+
+    pageCards.forEach(card => {
       const isSelected = selectedCards.has(card.code);
       const div = document.createElement('div');
       div.className = `group relative bg-slate-800 rounded-xl overflow-hidden border transition-all duration-200 cursor-pointer fade-in ${
@@ -83,18 +83,64 @@ class UIManager {
       `;
       grid.appendChild(div);
     });
+
+    if (filteredCards.length > pageSize) {
+      const totalPages = Math.ceil(filteredCards.length / pageSize);
+      const paginatorDiv = document.createElement('div');
+      paginatorDiv.className = 'col-span-full flex justify-center items-center gap-2 py-6';
+      
+      paginatorDiv.innerHTML = `
+        <button 
+          onclick="window.goToPage(${Math.max(0, page - 1)})" 
+          class="px-3 sm:px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-2 font-medium ${page === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
+          aria-label="Vorige pagina"
+          ${page === 0 ? 'disabled' : ''}
+        >
+          <i class="ph ph-caret-left text-lg" aria-hidden="true"></i>
+          <span class="hidden sm:inline text-sm">Vorige</span>
+        </button>
+      `;
+
+      const pageInfo = document.createElement('div');
+      pageInfo.className = 'flex items-center gap-1 sm:gap-2 flex-wrap justify-center';
+      
+      const pageSelect = document.createElement('select');
+      pageSelect.onchange = (e) => window.goToPage(parseInt(e.target.value));
+      pageSelect.className = 'bg-slate-700 text-slate-100 border-2 border-slate-600 rounded px-2 sm:px-3 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium cursor-pointer hover:bg-slate-600 transition-colors';
+      pageSelect.setAttribute('aria-label', 'Selecteer pagina');
+      
+      for (let i = 0; i < totalPages; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `Pagina ${i + 1} van ${totalPages}`;
+        option.selected = i === page;
+        pageSelect.appendChild(option);
+      }
+      
+      pageInfo.appendChild(pageSelect);
+      paginatorDiv.appendChild(pageInfo);
+
+      const nextBtn = document.createElement('button');
+      nextBtn.onclick = () => window.goToPage(Math.min(totalPages - 1, page + 1));
+      nextBtn.className = `px-3 sm:px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-2 font-medium ${page === totalPages - 1 ? 'opacity-50 cursor-not-allowed' : ''}`;
+      nextBtn.disabled = page === totalPages - 1;
+      nextBtn.setAttribute('aria-label', 'Volgende pagina');
+      nextBtn.innerHTML = `
+        <span class="hidden sm:inline text-sm">Volgende</span>
+        <i class="ph ph-caret-right text-lg" aria-hidden="true"></i>
+      `;
+      paginatorDiv.appendChild(nextBtn);
+
+      grid.appendChild(paginatorDiv);
+    }
   }
 
-  /**
-   * Update command bar visibility and content
-   * @param {number} selectedCount - Number of selected cards
-   * @param {Set} selectedCards - Set of selected card codes
-   * @param {string} cmdType - Command type
-   */
   static updateCommandBar(selectedCount, selectedCards, cmdType) {
     const bar = document.getElementById('command-bar');
     const countDiv = document.getElementById('selected-count');
     const cmdArgInput = document.getElementById('cmd-arg');
+
+    if (!bar || !countDiv || !cmdArgInput) return;
 
     countDiv.innerText = selectedCount;
 
@@ -104,7 +150,6 @@ class UIManager {
       bar.classList.add('translate-y-full');
     }
 
-    // Show/Hide argument input
     if (['kgive', 'ktag', 'kframe', 'kdye'].includes(cmdType)) {
       cmdArgInput.classList.remove('hidden');
       cmdArgInput.placeholder = cmdType === 'kgive' ? '@User ID' : 'Tag/Frame naam';
@@ -115,36 +160,26 @@ class UIManager {
     UIManager.updateCommandPreview(selectedCards, cmdType);
   }
 
-  /**
-   * Update command preview text
-   * @param {Set} selectedCards - Set of selected card codes
-   * @param {string} cmdType - Command type
-   */
   static updateCommandPreview(selectedCards, cmdType) {
     const cmdArgInput = document.getElementById('cmd-arg');
     const preview = document.getElementById('cmd-preview');
+    if (!cmdArgInput || !preview) return;
     const arg = cmdArgInput.value;
 
     const text = formatDiscordCommand(cmdType, selectedCards, arg);
     preview.innerText = text;
   }
 
-  /**
-   * Update statistics display
-   * @param {number} totalCards - Total cards in collection
-   */
   static updateStats(totalCards) {
-    document.getElementById('stats-display').innerText = `${totalCards} kaarten in database`;
+    const statsDisplay = document.getElementById('stats-display');
+    if (statsDisplay) statsDisplay.innerText = `${totalCards} kaarten in database`;
     const mobileStat = document.getElementById('stats-display-mobile');
     if (mobileStat) mobileStat.innerText = `${totalCards} kaarten`;
   }
 
-  /**
-   * Show/hide import modal
-   * @param {boolean} show - Show or hide
-   */
   static toggleModal(show = true) {
     const modal = document.getElementById('import-modal');
+    if (!modal) return;
     if (show) {
       modal.classList.remove('hidden');
     } else {
@@ -152,52 +187,32 @@ class UIManager {
     }
   }
 
-  /**
-   * Update select all button text
-   * @param {boolean} allSelected - Whether all visible cards are selected
-   */
   static updateSelectAllText(allSelected) {
     const text = allSelected ? 'Deselecteer alles' : 'Selecteer zichtbaar';
-    document.getElementById('select-all-text').innerText = text;
+    const el = document.getElementById('select-all-text');
+    if (el) el.innerText = text;
   }
 
-  /**
-   * Update sort direction button
-   * @param {string} direction - 'asc' or 'desc'
-   */
   static updateSortButton(direction) {
     const btn = document.getElementById('sort-btn');
-    btn.innerText = direction === 'asc' ? '↑' : '↓';
+    if (btn) btn.innerText = direction === 'asc' ? '↑' : '↓';
   }
 
-  /**
-   * Clear import textarea
-   */
   static clearImportText() {
-    document.getElementById('import-text').value = '';
+    const el = document.getElementById('import-text');
+    if (el) el.value = '';
   }
 
-  /**
-   * Get import textarea value
-   * @returns {string}
-   */
   static getImportText() {
-    return document.getElementById('import-text').value;
+    const el = document.getElementById('import-text');
+    return el ? el.value : '';
   }
 
-  /**
-   * Get import mode (replace or merge)
-   * @returns {string}
-   */
   static getImportMode() {
     const el = document.querySelector('input[name="importMode"]:checked');
     return el ? el.value : 'merge';
   }
 
-  /**
-   * Show alert message
-   * @param {string} message - Message to show
-   */
   static showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -430,5 +445,26 @@ class UIManager {
   static clearImportError() {
     const error = document.getElementById('import-error');
     if (error) error.innerHTML = '';
+  }
+
+  static showDeleteConfirm(card) {
+    const modal = document.getElementById('delete-confirm-modal');
+    if (!modal) return;
+    const label = document.getElementById('delete-confirm-text');
+    if (label) {
+      const customText = card?.customText;
+      if (customText) {
+        label.textContent = customText;
+      } else {
+        const name = card?.name || card?.code || 'deze kaart';
+        label.textContent = `Weet je zeker dat je ${name} wilt verwijderen?`;
+      }
+    }
+    modal.classList.remove('hidden');
+  }
+
+  static hideDeleteConfirm() {
+    const modal = document.getElementById('delete-confirm-modal');
+    if (modal) modal.classList.add('hidden');
   }
 }

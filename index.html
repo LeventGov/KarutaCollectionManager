@@ -14,23 +14,20 @@
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex flex-col sm:flex-row items-center justify-between h-auto sm:h-16 py-3 sm:py-0 gap-3 sm:gap-0">
                 <div class="flex items-center gap-2 sm:gap-3">
-                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                        <i class="ph ph-cards text-xl sm:text-2xl text-white" aria-hidden="true"></i>
-                    </div>
                     <div class="text-center sm:text-left">
                         <span class="text-base sm:text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent block">Karuta Manager</span>
                         <p class="text-xs text-slate-400 hidden sm:block" id="stats-display" aria-live="polite">Laden...</p>
                     </div>
                 </div>
-                <div class="flex gap-1 sm:gap-2 flex-wrap justify-center" role="menubar">
-                    <a href="index.html" class="px-2 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs sm:text-base" role="menuitem" aria-current="page">
-                        <i class="ph ph-cards" aria-hidden="true"></i><span class="hidden sm:inline"> Collectie</span>
+                <div class="flex gap-2 sm:gap-3 flex-wrap justify-center" role="menubar">
+                    <a href="index.html" class="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm sm:text-base transition-colors" role="menuitem" aria-current="page">
+                        <i class="ph ph-cards text-2xl sm:text-3xl" aria-hidden="true"></i>
                     </a>
-                    <a href="assets/pages/import.html" class="px-2 sm:px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors text-xs sm:text-base" role="menuitem">
-                        <i class="ph ph-upload-simple" aria-hidden="true"></i><span class="hidden sm:inline"> Importeer</span>
+                    <a href="assets/pages/import.html" class="px-3 sm:px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors text-sm sm:text-base" role="menuitem">
+                        <i class="ph ph-upload-simple text-2xl sm:text-3xl" aria-hidden="true"></i>
                     </a>
-                    <a href="assets/pages/settings.html" class="px-2 sm:px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors text-xs sm:text-base" role="menuitem">
-                        <i class="ph ph-gear" aria-hidden="true"></i><span class="hidden sm:inline"> Instellingen</span>
+                    <a href="assets/pages/settings.html" class="px-3 sm:px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors text-sm sm:text-base" role="menuitem">
+                        <i class="ph ph-gear text-2xl sm:text-3xl" aria-hidden="true"></i>
                     </a>
                 </div>
             </div>
@@ -123,243 +120,21 @@
         </div>
     </main>
 
-    <div id="preview-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" role="dialog" aria-labelledby="preview-title" aria-modal="true">
-        <div class="bg-slate-800 rounded-xl shadow-2xl max-w-5xl w-full border border-slate-700 flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
-                <div>
-                    <p class="text-xs text-slate-500" id="preview-code-label">Code</p>
-                    <h2 id="preview-title" class="text-lg font-bold text-white">Kaart</h2>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="window.openCardDetails(app.activeCard?.code)" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white text-sm">Bewerk</button>
-                    <button onclick="closeCardPreview()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-200 text-sm">Sluiten</button>
-                </div>
-            </div>
-            <div class="p-4 md:p-6 overflow-auto space-y-4">
-                <div class="grid md:grid-cols-3 gap-4">
-                    <div class="md:col-span-2 bg-slate-900/50 border border-slate-700 rounded-lg p-4 space-y-3">
-                        <div class="grid md:grid-cols-2 gap-3 text-sm text-slate-200">
-                            <div>
-                                <p class="text-slate-400">Character</p>
-                                <p class="font-semibold" id="preview-name">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Serie</p>
-                                <p class="font-semibold" id="preview-series">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Editie</p>
-                                <p class="font-semibold" id="preview-edition">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Print</p>
-                                <p class="font-semibold" id="preview-print">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Kwaliteit</p>
-                                <p class="font-semibold" id="preview-quality">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Tag</p>
-                                <p class="font-semibold" id="preview-tag">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Alias</p>
-                                <p class="font-semibold" id="preview-alias">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Code</p>
-                                <p class="font-mono text-xs bg-slate-900 px-2 py-1 rounded" id="preview-code">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Obtained</p>
-                                <p class="font-semibold" id="preview-obtained">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Wishlists</p>
-                                <p class="font-semibold" id="preview-wishlists">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Fights</p>
-                                <p class="font-semibold" id="preview-fights">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Dropper</p>
-                                <p class="font-semibold" id="preview-dropper">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Grabber</p>
-                                <p class="font-semibold" id="preview-grabber">-</p>
-                            </div>
-                            <div>
-                                <p class="text-slate-400">Guild</p>
-                                <p class="font-semibold" id="preview-guild">-</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 space-y-3">
-                        <div class="aspect-[3/4] bg-slate-950 border border-slate-800 rounded-lg overflow-hidden flex items-center justify-center">
-                            <img id="preview-image" alt="Kaart afbeelding" class="w-full h-full object-cover hidden">
-                            <span id="preview-image-placeholder" class="text-slate-600 text-xs">Laad placeholder</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="detail-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" role="dialog" aria-labelledby="detail-title" aria-modal="true">
-        <div class="bg-slate-800 rounded-xl shadow-2xl max-w-5xl w-full border border-slate-700 flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
-                <div>
-                    <p class="text-xs text-slate-500" id="detail-code-label">Code</p>
-                    <h2 id="detail-title" class="text-lg font-bold text-white">Kaart details</h2>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="closeCardDetails()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-200 text-sm">Sluiten</button>
-                    <button onclick="saveCardDetails()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white text-sm font-semibold">Opslaan</button>
-                </div>
-            </div>
-            <div class="p-4 md:p-6 overflow-auto space-y-4">
-                <div class="grid md:grid-cols-3 gap-4">
-                    <div class="md:col-span-2 bg-slate-900/50 border border-slate-700 rounded-lg p-4 space-y-3">
-                        <div class="grid md:grid-cols-2 gap-3">
-                            <label class="text-sm text-slate-300">Code
-                                <input id="detail-code" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm" aria-readonly="true" readonly>
-                            </label>
-                            <label class="text-sm text-slate-300">Character
-                                <input id="detail-name" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Serie
-                                <input id="detail-series" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Editie
-                                <input id="detail-edition" type="number" min="1" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Print / Nummer
-                                <input id="detail-number" type="number" min="0" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Kwaliteit
-                                <input id="detail-quality" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm" placeholder="★★★☆">
-                            </label>
-                            <label class="text-sm text-slate-300">Tag
-                                <input id="detail-tag" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm" placeholder="favoriet, burn...">
-                            </label>
-                            <label class="text-sm text-slate-300">Alias
-                                <input id="detail-alias" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                        </div>
-
-                        <div class="grid md:grid-cols-2 gap-3">
-                            <label class="text-sm text-slate-300">Obtained Date
-                                <input id="detail-obtainedDate" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Obtained Timestamp
-                                <input id="detail-obtainedTimestamp" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Burn Value
-                                <input id="detail-burnValue" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Dye Code
-                                <input id="detail-dyeCode" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Dye Naam
-                                <input id="detail-dyeName" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Frame
-                                <input id="detail-frame" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Morphed
-                                <input id="detail-morphed" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Trimmed
-                                <input id="detail-trimmed" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                        </div>
-
-                        <div class="grid md:grid-cols-2 gap-3">
-                            <label class="text-sm text-slate-300">Wishlists
-                                <input id="detail-wishlists" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Fights
-                                <input id="detail-fights" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Drop Quality
-                                <input id="detail-dropQuality" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Dropper
-                                <input id="detail-dropper" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Grabber
-                                <input id="detail-grabber" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Guild
-                                <input id="detail-guild" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                        </div>
-
-                        <div class="grid md:grid-cols-2 gap-3">
-                            <label class="text-sm text-slate-300">Worker Effort
-                                <input id="detail-workerEffort" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Worker Style
-                                <input id="detail-workerStyle" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Worker Purity
-                                <input id="detail-workerPurity" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Worker Grabber
-                                <input id="detail-workerGrabber" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Worker Dropper
-                                <input id="detail-workerDropper" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Worker Quickness
-                                <input id="detail-workerQuickness" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Worker Toughness
-                                <input id="detail-workerToughness" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Worker Vanity
-                                <input id="detail-workerVanity" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Worker Recovery Date
-                                <input id="detail-workerRecoveryDate" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                            <label class="text-sm text-slate-300">Worker Recovery Timestamp
-                                <input id="detail-workerRecoveryTimestamp" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 space-y-3">
-                        <div class="aspect-[3/4] bg-slate-950 border border-slate-800 rounded-lg overflow-hidden flex items-center justify-center">
-                            <img id="detail-image-preview" alt="Kaart afbeelding" class="w-full h-full object-cover hidden">
-                            <span id="detail-image-placeholder" class="text-slate-600 text-xs">Laad placeholder</span>
-                        </div>
-                        <label class="text-sm text-slate-300">Afbeelding URL
-                            <input id="detail-image-url" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm" placeholder="https://...">
-                        </label>
-                        <button onclick="openImagePickerFromDetail()" class="w-full px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white text-sm flex items-center justify-center gap-2">
-                            <i class="ph ph-images"></i> Zoek afbeelding
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Modals loaded dynamically -->
+    <div id="modals-container"></div>
 
     <div id="command-bar" class="fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-indigo-500 shadow-2xl transition-transform duration-300 z-40 translate-y-full" role="toolbar" aria-label="Discord commando's">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center gap-4">
             <div class="flex items-center gap-3 min-w-fit">
                 <div id="selected-count" class="bg-indigo-600 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center" aria-live="polite">0</div>
                 <span class="text-sm text-slate-300 hidden md:inline">Geselecteerd</span>
-                <button 
-                    onclick="clearSelection()" 
-                    class="text-xs text-slate-500 hover:text-white underline cursor-pointer"
-                    aria-label="Wis selectie"
-                >Wis</button>
+                <div class="flex gap-2">
+                    <button 
+                        onclick="deleteSelectedCards()" 
+                        class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-semibold transition-colors"
+                        aria-label="Verwijder geselecteerde kaarten"
+                    >Verwijder selectie</button>
+                </div>
             </div>
 
             <div class="flex-1 w-full grid grid-cols-1 md:grid-cols-12 gap-2">
@@ -374,6 +149,8 @@
                     <option value="ktag">Tag</option>
                     <option value="kframe">Frame</option>
                     <option value="kdye">Dye</option>
+                    <option value="kv">View (1 kaart)</option>
+                    <option value="kci">Card Info (1 kaart)</option>
                 </select>
 
                 <input 
@@ -401,45 +178,7 @@
         </div>
     </div>
 
-    <div id="image-picker-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" role="dialog" aria-labelledby="image-picker-title" aria-modal="true">
-        <div class="bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-full border border-slate-700 flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b border-slate-700 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h2 id="image-picker-title" class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="ph ph-images text-indigo-400" aria-hidden="true"></i> 
-                    Selecteer afbeelding voor <span id="picker-card-name" class="text-indigo-400">-</span>
-                </h2>
-                <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-                    <input id="image-picker-search" type="text" placeholder="Zoek op naam + serie" class="w-full sm:w-64 bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-200" aria-label="Zoekterm afbeelding">
-                    <div class="flex items-center gap-2 justify-end">
-                        <button onclick="window.searchImagePicker()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 text-sm">Zoek</button>
-                        <button 
-                            onclick="closeImagePicker()" 
-                            class="text-slate-400 hover:text-white"
-                            aria-label="Sluit"
-                        >
-                            <i class="ph ph-x text-2xl" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="p-6 flex-1 overflow-hidden">
-                <div class="h-full overflow-y-auto space-y-6 pr-1">
-                    <div id="image-picker-loading" class="text-center py-12" aria-live="polite">
-                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent" role="status" aria-label="Laden"></div>
-                        <p class="text-slate-400 mt-4">Afbeeldingen laden...</p>
-                    </div>
-                    <div id="image-picker-grid" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" role="list" aria-label="Beschikbare afbeeldingen">
-                    </div>
-                    <div id="image-picker-error" class="hidden text-center py-12" role="alert">
-                        <i class="ph ph-warning-circle text-5xl text-amber-500 mb-4" aria-hidden="true"></i>
-                        <p class="text-slate-300">Geen resultaten gevonden</p>
-                        <p class="text-sm text-slate-500 mt-2">Probeer een andere zoekopdracht</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <script src="assets/js/idb-storage.js"></script>
     <script src="assets/js/storage.js"></script>
     <script src="assets/js/api.js"></script>
     <script src="assets/js/utils.js"></script>

@@ -4,7 +4,6 @@ function handleFileSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  // Clear error state when switching tabs
   UIManager.clearImportError();
 
   document.getElementById('file-name').innerText = file.name;
@@ -57,7 +56,6 @@ function processImport() {
   app.processImport();
 }
 
-// Clear error state when clicking on import text
 document.addEventListener('DOMContentLoaded', () => {
   const importText = document.getElementById('import-text');
   if (importText) {
@@ -68,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Handle drag and drop
   const dropZone = document.querySelector('[aria-labelledby="file-heading"]');
   if (dropZone) {
     dropZone.addEventListener('dragover', (e) => {

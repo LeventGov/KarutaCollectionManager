@@ -1,5 +1,5 @@
-function updateStats() {
-  const collection = storage.load();
+async function updateStats() {
+  const collection = await storage.load();
   document.getElementById('total-cards').innerText = `${collection.length} kaarten`;
 }
 
@@ -24,17 +24,25 @@ function showConfirm(message, onConfirm) {
   document.body.appendChild(overlay);
 }
 
-function exportJson() {
-  const collection = storage.load();
-  downloadJSON(collection, 'karuta_backup.json');
+async function exportJson() {
+  const collection = await storage.load();
+  const exportData = collection.map(card => ({
+    ...card,
+    imageUrl: !card.imageUrl || card.imageUrl === 'assets/images/placeholder.png' ? 'PLACEHOLDER' : card.imageUrl
+  }));
+  downloadJSON(exportData, 'karuta_backup.json');
   UIManager.showToast('JSON backup gedownload', 'success');
 }
 
-function exportCsv() {
-  const collection = storage.load();
-  const header = Object.keys(collection[0] || CARD_DEFAULTS).join(',');
-  const rows = collection.map(card => {
-    return Object.keys(collection[0] || CARD_DEFAULTS).map(key => {
+async function exportCsv() {
+  const collection = await storage.load();
+  const exportData = collection.map(card => ({
+    ...card,
+    imageUrl: !card.imageUrl || card.imageUrl === 'assets/images/placeholder.png' ? 'PLACEHOLDER' : card.imageUrl
+  }));
+  const header = Object.keys(exportData[0] || CARD_DEFAULTS).join(',');
+  const rows = exportData.map(card => {
+    return Object.keys(exportData[0] || CARD_DEFAULTS).map(key => {
       const val = card[key] ?? '';
       const safe = typeof val === 'string' && val.includes(',') ? `"${val.replace(/"/g, '""')}"` : val;
       return safe;

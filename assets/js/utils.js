@@ -37,6 +37,11 @@ const CARD_DEFAULTS = {
 function applyCardDefaults(card = {}) {
   const printVal = parseInt(card.print ?? card.number ?? 0) || 0;
   const editionVal = parseInt(card.edition ?? 1) || 1;
+  
+  let imageUrl = card.imageUrl || '';
+  if (imageUrl && imageUrl.toUpperCase() === 'PLACEHOLDER') {
+    imageUrl = 'assets/images/placeholder.png';
+  }
 
   return {
     ...CARD_DEFAULTS,
@@ -46,7 +51,7 @@ function applyCardDefaults(card = {}) {
     edition: editionVal,
     quality: card.quality || '★☆☆☆',
     tag: card.tag || '',
-    imageUrl: card.imageUrl || ''
+    imageUrl: imageUrl
   };
 }
 
@@ -79,7 +84,7 @@ function parseCSVLine(line) {
     parts.push(current.trim());
   }
 
-  return parts;
+  return parts.map(p => String(p || '').trim());
 }
 
 function isValidCard(card) {
@@ -88,6 +93,11 @@ function isValidCard(card) {
 
 function createCardFromRecord(record) {
   if (!record || !record.code) return null;
+
+  let imageUrl = record.imageUrl || record.imageurl || '';
+  if (imageUrl && (imageUrl.toUpperCase() === 'PLACEHOLDER' || imageUrl === 'assets/images/placeholder.png')) {
+    imageUrl = 'assets/images/placeholder.png';
+  }
 
   const card = {
     code: (record.code || '').toLowerCase(),
@@ -123,14 +133,20 @@ function createCardFromRecord(record) {
     workerVanity: record.workerVanity || record['worker.vanity'] || '',
     workerRecoveryDate: record.workerRecoveryDate || record['worker.recoveryDate'] || '',
     workerRecoveryTimestamp: record.workerRecoveryTimestamp || record['worker.recoveryTimestamp'] || '',
-    imageUrl: record.imageUrl || ''
+    imageUrl: imageUrl
   };
 
   return isValidCard(card) ? applyCardDefaults(card) : null;
 }
 
 function formatDiscordCommand(type, codes, argument = '') {
-  const codesStr = Array.from(codes).join(' ');
+  const codesArray = Array.from(codes);
+  const codesStr = codesArray.join(' ');
+  
+  if ((type === 'kv' || type === 'kci') && codesArray.length > 1) {
+    return `Let op: ${type} werkt alleen met 1 kaart. Selecteer slechts 1 kaart.`;
+  }
+  
   switch (type) {
     case 'kmt': return `k!mt ${codesStr}`;
     case 'kgive': return `k!give ${argument || '@user'} ${codesStr}`;
@@ -138,6 +154,8 @@ function formatDiscordCommand(type, codes, argument = '') {
     case 'ktag': return `k!tag "${argument || 'tag'}" ${codesStr}`;
     case 'kframe': return `k!frame ${argument || 'frame'} ${codesStr}`;
     case 'kdye': return `k!dye ${argument || 'dye'} ${codesStr}`;
+    case 'kv': return `k!v ${codesStr}`;
+    case 'kci': return `k!ci ${codesStr}`;
     default: return codesStr;
   }
 }
@@ -161,6 +179,69 @@ function downloadJSON(data, filename = 'export.json') {
   downloadLink.remove();
 }
 
+function validateJsonCards(data) {
+  if (!Array.isArray(data)) return false;
+  if (data.length === 0) return true;
+  
+  const validKeys = new Set(Object.keys(CARD_DEFAULTS));
+  validKeys.add('print');
+  
+  for (const item of data) {
+    if (typeof item !== 'object' || item === null) return false;
+    
+    for (const key in item) {
+      if (!validKeys.has(key)) return false;
+    }
+    
+    if (!item.code || typeof item.code !== 'string') return false;
+    if (!item.name || typeof item.name !== 'string') return false;
+    
+    if (item.imageUrl && typeof item.imageUrl !== 'string') return false;
+    if (item.imageUrl && item.imageUrl.length > 2000) return false;
+    if (item.imageUrl && !item.imageUrl.match(/^(PLACEHOLDER|https?:\/\/.+|assets\/.+)$/)) return false;
+  }
+  
+  return true;
+}
+
+function sanitizeCardData(card) {
+  return {
+    code: String(card.code || '').toLowerCase().trim(),
+    number: parseInt(card.number) || 0,
+    edition: parseInt(card.edition) || 1,
+    name: String(card.name || '').trim(),
+    series: String(card.series || '').trim(),
+    quality: String(card.quality || '★☆☆☆').trim(),
+    obtainedDate: String(card.obtainedDate || '').trim(),
+    obtainedTimestamp: String(card.obtainedTimestamp || '').trim(),
+    burnValue: String(card.burnValue || '').trim(),
+    dyeCode: String(card.dyeCode || '').trim(),
+    dyeName: String(card.dyeName || '').trim(),
+    frame: String(card.frame || '').trim(),
+    morphed: String(card.morphed || '').trim(),
+    trimmed: String(card.trimmed || '').trim(),
+    tag: String(card.tag || '').trim(),
+    alias: String(card.alias || '').trim(),
+    wishlists: String(card.wishlists || '').trim(),
+    fights: String(card.fights || '').trim(),
+    dropQuality: String(card.dropQuality || '').trim(),
+    dropper: String(card.dropper || '').trim(),
+    grabber: String(card.grabber || '').trim(),
+    guild: String(card.guild || '').trim(),
+    workerEffort: String(card.workerEffort || '').trim(),
+    workerStyle: String(card.workerStyle || '').trim(),
+    workerPurity: String(card.workerPurity || '').trim(),
+    workerGrabber: String(card.workerGrabber || '').trim(),
+    workerDropper: String(card.workerDropper || '').trim(),
+    workerQuickness: String(card.workerQuickness || '').trim(),
+    workerToughness: String(card.workerToughness || '').trim(),
+    workerVanity: String(card.workerVanity || '').trim(),
+    workerRecoveryDate: String(card.workerRecoveryDate || '').trim(),
+    workerRecoveryTimestamp: String(card.workerRecoveryTimestamp || '').trim(),
+    imageUrl: String(card.imageUrl || '').trim()
+  };
+}
+
 function normalizeQualityStars(value) {
   if (!value && value !== 0) return '★☆☆☆';
   if (typeof value === 'string') {
@@ -175,7 +256,6 @@ function normalizeQualityStars(value) {
     const key = value.toLowerCase().trim();
     return map[key] || '★☆☆☆';
   }
-  // Handle numeric quality (0-4)
   const num = parseInt(value);
   if (num === 0) return '★☆☆☆';
   if (num === 1) return '★☆☆☆';
@@ -204,9 +284,9 @@ function parseDiscordFormat(text) {
     const [codeRaw, qualityRaw, printRaw, editionRaw, seriesRaw, ...rest] = parts;
     const nameRaw = rest.join(' ');
 
-    // Strip any remaining emoji from code and name
     const cleanCode = (codeRaw || '').replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim().toLowerCase();
     const cleanName = (nameRaw || '').replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
+    const cleanSeries = (seriesRaw || '').replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
     
     const print = parseInt((printRaw || '').replace('#', '').trim()) || 0;
     const edition = parseInt((editionRaw || '').replace('◈', '').trim()) || 1;
@@ -215,16 +295,18 @@ function parseDiscordFormat(text) {
 
     if (!cleanCode || !cleanName) return;
 
-    cards.push(applyCardDefaults({
+    const sanitized = sanitizeCardData({
       code: cleanCode,
       name: cleanName,
-      series: seriesRaw || 'Unknown',
+      series: cleanSeries || 'Unknown',
       edition,
       print,
       number: print,
       quality,
       tag
-    }));
+    });
+
+    cards.push(applyCardDefaults(sanitized));
   });
 
   return cards;
@@ -249,6 +331,7 @@ function parseFileContent(content, fileType = 'csv') {
 
   return records
     .map(createCardFromRecord)
+    .map(sanitizeCardData)
     .filter(Boolean);
 }
 

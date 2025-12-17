@@ -1,0 +1,17 @@
+<div id="delete-confirm-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+    <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-red-900/30 border border-red-700 flex items-center justify-center text-red-400">
+                <i class="ph ph-warning text-xl" aria-hidden="true"></i>
+            </div>
+            <div>
+                <h2 id="delete-confirm-title" class="text-lg font-bold text-white">Kaart verwijderen</h2>
+                <p id="delete-confirm-text" class="text-sm text-slate-300">Weet je zeker dat je deze kaart wilt verwijderen?</p>
+            </div>
+        </div>
+        <div class="flex justify-end gap-3">
+            <button onclick="cancelDeleteCard()" class="px-4 py-2 rounded-lg bg-slate-700 text-slate-200 hover:bg-slate-600 transition-colors">Annuleren</button>
+            <button onclick="confirmDeleteCard()" class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors">Verwijder</button>
+        </div>
+    </div>
+</div>
